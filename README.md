@@ -61,7 +61,7 @@ Las carpetas están reservadas para el desarrollo. La separación `services/` no
 
 ## Tecnología por decidir
 
-Se han estudiado **Next.js**, **Supabase/PostgreSQL**, **Cloudflare Pages** o **Vercel**, así como alternativas de almacenamiento local y respaldo. **El prototipo web usa Next.js; las demás tecnologías no se consideran aprobadas ni implementadas todavía.** La conectividad entre el teléfono del alumno y el registro del docente, la estrategia offline, el alojamiento, la política de backups y las condiciones de los planes gratuitos siguen por validar.
+Se han estudiado **Next.js**, **Supabase/PostgreSQL**, **Cloudflare Pages** o **Vercel**, así como alternativas de almacenamiento local y respaldo. **El prototipo web usa Next.js; las migraciones propuestas para Supabase aún no están conectadas ni aplicadas al proyecto remoto.** Las demás decisiones siguen pendientes. La conectividad entre el teléfono del alumno y el registro del docente, la estrategia offline, el alojamiento, la política de backups y las condiciones de los planes gratuitos siguen por validar.
 
 ## Principios de diseño
 
@@ -108,3 +108,7 @@ Abre `http://localhost:3000`. Para comprobar la aplicación ejecuta `npm run typ
 Las rutas `/login`, `/register` y `/forgot-password` muestran formularios de demostración que validan la interfaz: no crean cuentas, no inician sesión y no envían correos. No se deben introducir credenciales reales. Las rutas existentes `/docente` y `/estudiante` muestran paneles públicos con datos ficticios; cambiar de vista no concede permisos. Los roles reales deberán validarse en el servidor cuando exista un backend. El curso de muestra permanece en `apps/web/src/lib/demo-courses.ts`.
 
 Los tipos de evaluaciones y escalas configurables están en `apps/web/src/types/academic.ts`. La escala de 1 a 5 es un ejemplo provisional y no convierte ni calcula notas. Las calificaciones futuras serán informativas y no sustituyen los registros oficiales. El piloto sigue sujeto a autorización institucional antes de usar datos reales.
+
+## Infraestructura de datos propuesta
+
+La migración versionada y las pruebas RLS están en `supabase/`. Consulta [Infraestructura de datos y seguridad](docs/infraestructura-datos.md) para el modelo, las pruebas aisladas y los pasos previos a cualquier aplicación futura. No se ha aplicado al proyecto Supabase remoto.
