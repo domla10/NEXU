@@ -2,7 +2,7 @@
 
 **NEXU** es una plataforma digital de apoyo a la gestión académica, planteada inicialmente como una **aplicación web progresiva (PWA)** para la Universidad Nacional Experimental Simón Rodríguez (UNESR), Venezuela.
 
-> **Estado:** planificación y preparación de un prototipo. El repositorio contiene únicamente la estructura inicial y documentación, no una aplicación funcional.
+> **Estado:** prototipo visual 0.1.1 con pantallas de demostración y datos ficticios; aún no registra asistencias ni cuenta con autenticación.
 
 ## Propósito
 
@@ -10,11 +10,11 @@ Digitalizar y agilizar el registro de asistencia en clases y, en una fase poster
 
 ## Prioridad actual: piloto de asistencia
 
-La propuesta institucional de noviembre de 2026 concentra la primera prueba piloto en **una unidad curricular y una sección**, con un docente colaborador y autorización institucional. Su alcance comprende:
+El curso propuesto provisionalmente para el piloto es **Química Orgánica**, del programa de Ingeniería de Alimentos de la **UNESR, Núcleo Araure**. Todavía no existe autorización institucional para realizar pruebas con datos reales. La propuesta requiere un facilitador colaborador y aprobación institucional. Su alcance previsto comprende:
 
 - **QR dinámico**: el profesor abre una sesión y muestra códigos de vigencia corta con renovación continua (30 segundos es una propuesta inicial, no una decisión final). La validación debe ocurrir de manera segura desde un servicio o mecanismo confiable. El código QR no contiene datos personales.
 - **Registro manual de respaldo**: el profesor puede registrar asistencias en caso de fallos de conexión, batería o disponibilidad del dispositivo del estudiante. Se conserva trazabilidad del registro.
-- **Listado de estudiantes por sección**: cada asistencia debe quedar asociada a la matrícula autorizada de una sección; escanear un QR no implica inscribirse automáticamente.
+- **Listado de participantes por curso**: cada asistencia deberá quedar asociada a una matrícula autorizada; escanear un QR no implica inscribirse automáticamente.
 - **Reportes descargables**: exportación a PDF, Excel y DOCX con respaldos según el procedimiento acordado con la institución.
 - **Privacidad y seguridad**: únicamente datos mínimos autorizados; control de acceso por rol y sección, historial de cambios y protección de información personal.
 
@@ -61,7 +61,7 @@ Las carpetas están reservadas para el desarrollo. La separación `services/` no
 
 ## Tecnología por decidir
 
-Se han estudiado **Next.js**, **Supabase/PostgreSQL**, **Cloudflare Pages** o **Vercel**, así como alternativas de almacenamiento local y respaldo. **Ninguna combinación se considera aprobada o implementada todavía.** La conectividad entre el teléfono del alumno y el registro del docente, la estrategia offline, el alojamiento, la política de backups y las condiciones de los planes gratuitos siguen por validar.
+Se han estudiado **Next.js**, **Supabase/PostgreSQL**, **Cloudflare Pages** o **Vercel**, así como alternativas de almacenamiento local y respaldo. **El prototipo web usa Next.js; las demás tecnologías no se consideran aprobadas ni implementadas todavía.** La conectividad entre el teléfono del alumno y el registro del docente, la estrategia offline, el alojamiento, la política de backups y las condiciones de los planes gratuitos siguen por validar.
 
 ## Principios de diseño
 
@@ -88,3 +88,23 @@ Se han estudiado **Next.js**, **Supabase/PostgreSQL**, **Cloudflare Pages** o **
 ## Documentación
 
 Consulta `docs/` para decisiones, alcance del piloto, riesgos y criterios de seguridad. La estructura está lista para incorporar código sin prejuzgar todas las tecnologías.
+
+## Ejecutar el prototipo web
+
+La versión 0.1.1 ofrece pantallas de demostración con datos ficticios. El curso provisional se configura en `apps/web/src/lib/demo-courses.ts`. No incluye autenticación, registro de asistencia ni QR funcional. No existe autorización institucional para pruebas con datos reales.
+
+Requisitos: Node.js 20.9 o posterior y npm. Desde la raíz del repositorio:
+
+```bash
+cd apps/web
+npm ci
+npm run dev
+```
+
+Abre `http://localhost:3000`. Para comprobar la aplicación ejecuta `npm run typecheck`, `npm run lint` y `npm run build`. Para acceder desde un teléfono en la misma red, inicia `npm run dev -- --hostname 0.0.0.0` y abre `http://<IP-local-del-equipo>:3000` en el teléfono; la red y el cortafuegos deben permitir la conexión. En un entorno Cloud remoto se necesita una URL de vista previa o un túnel seguro.
+
+## Frontend de autenticación y paneles
+
+Las rutas `/login`, `/register` y `/forgot-password` muestran formularios de demostración que validan la interfaz: no crean cuentas, no inician sesión y no envían correos. No se deben introducir credenciales reales. Las rutas existentes `/docente` y `/estudiante` muestran paneles públicos con datos ficticios; cambiar de vista no concede permisos. Los roles reales deberán validarse en el servidor cuando exista un backend. El curso de muestra permanece en `apps/web/src/lib/demo-courses.ts`.
+
+Los tipos de evaluaciones y escalas configurables están en `apps/web/src/types/academic.ts`. La escala de 1 a 5 es un ejemplo provisional y no convierte ni calcula notas. Las calificaciones futuras serán informativas y no sustituyen los registros oficiales. El piloto sigue sujeto a autorización institucional antes de usar datos reales.

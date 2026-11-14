@@ -1,8 +1,8 @@
 # Plan piloto (propuesta noviembre-diciembre 2026)
 
-**Requiere autorización institucional.**
+**No existe todavía autorización institucional para realizar pruebas con datos reales.** El curso provisional propuesto es Química Orgánica, Ingeniería de Alimentos, UNESR Núcleo Araure.
 
-1. Acordar docente, materia, sección y lista de prueba autorizada.
+1. Acordar facilitador, curso y lista de prueba autorizada.
 2. Prototipo: sesiones QR, registro manual, exportaciones.
 3. Ensayo en clase y registro de incidencias.
 4. Evaluar tiempo invertido en asistencia, experiencia del docente y alumnos, errores y riesgos.
