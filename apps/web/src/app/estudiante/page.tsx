@@ -1,2 +1,2 @@
 import { Dashboard } from '@/components/dashboard';
-export default function Page(){return <Dashboard role="estudiante"/>;}
+export default function Page() { return <Dashboard role="participante" />; }

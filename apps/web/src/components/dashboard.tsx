@@ -1,3 +1,26 @@
-import Link from 'next/link';
-import { Header, Footer, Course, courses } from './ui';
-export function Dashboard({role}: {role:'docente'|'estudiante'}) { const student=role==='estudiante'; return <><Header role={role}/><main className="dashboard wrap"><div className="breadcrumb"><Link href="/">Inicio</Link><span>/</span> Panel {role}</div><div className="dashboard-heading"><div><div className="eyebrow"><span className="spark">✳</span> TU ESPACIO ACADÉMICO</div><h1>Hola, {role}<span className="heading-dot">.</span></h1><p>{student?'Un vistazo a tus materias y tu asistencia.':'Todo comienza con un buen encuentro.'}</p></div><div className="demo-label">◉ &nbsp; DATOS DE DEMOSTRACIÓN</div></div><div className="banner"><div><span className="banner-kicker">BIENVENIDO A NEXU</span><h2>{student?'Tu camino, un encuentro a la vez.':'Acompañar también es conectar.'}</h2><p>{student?'Aquí podrás seguir tu recorrido académico de forma sencilla.':'Un espacio para organizar tus materias y acompañar a tus estudiantes.'}</p></div><div className="banner-symbol" aria-hidden="true">✳</div></div><div className="section-heading"><div><span className="section-kicker">TU ACTIVIDAD</span><h2>{student?'Materias inscritas':'Materias y secciones'}</h2><p>Información ficticia para explorar la plataforma.</p></div><span className="count">03 MATERIAS</span></div><div className="course-grid">{courses.map(c=><Course key={c.code} course={c} student={student}/>)}</div><section className="upcoming"><div className="upcoming-icon">{student?'⌗':'◷'}</div><div><span className="section-kicker">PRÓXIMAMENTE</span><h2>{student?'Registro de asistencia con QR':'Sesiones de asistencia'}</h2><p>{student?'Este espacio está reservado para el futuro registro de asistencia.':'Aquí podrás gestionar futuras sesiones de asistencia.'}</p></div><span className="soon">EN PREPARACIÓN</span></section><p className="disclaimer">✳ &nbsp; Esta es una vista de demostración. No se registran asistencias ni se utilizan datos reales.</p></main><Footer/></>; }
+import { demoCourses } from '@/lib/demo-courses';
+import { CourseCard, Header } from './ui';
+
+export function Dashboard({ role }: { role: 'facilitador' | 'participante' }) {
+  const participant = role === 'participante';
+  return (
+    <>
+      <Header role={role} />
+      <main className="content dashboard">
+        <div className="title-row">
+          <div><p className="eyebrow">PANEL DE {role.toUpperCase()}</p><h1>Mis cursos</h1></div>
+          <span className="demo-badge">Demostración</span>
+        </div>
+        <p className="intro">Curso provisional para el piloto.</p>
+        <div className="course-list">
+          {demoCourses.map((course) => <CourseCard key={`${course.institution}-${course.campus}-${course.name}`} course={course} />)}
+        </div>
+        <aside className="notice" aria-label="Próximamente">
+          <span className="notice-icon" aria-hidden="true">◷</span>
+          <div><strong>Próximamente</strong><p>{participant ? 'Registro de asistencia mediante QR.' : 'Gestión de asistencia del curso.'}</p></div>
+        </aside>
+        <p className="disclaimer">Demostración con datos ficticios. No se registra asistencia.</p>
+      </main>
+    </>
+  );
+}

@@ -2,7 +2,7 @@
 
 **NEXU** es una plataforma digital de apoyo a la gestión académica, planteada inicialmente como una **aplicación web progresiva (PWA)** para la Universidad Nacional Experimental Simón Rodríguez (UNESR), Venezuela.
 
-> **Estado:** prototipo visual 0.1.0 con pantallas de demostración y datos ficticios; aún no registra asistencias ni cuenta con autenticación.
+> **Estado:** prototipo visual 0.1.1 con pantallas de demostración y datos ficticios; aún no registra asistencias ni cuenta con autenticación.
 
 ## Propósito
 
@@ -10,11 +10,11 @@ Digitalizar y agilizar el registro de asistencia en clases y, en una fase poster
 
 ## Prioridad actual: piloto de asistencia
 
-La propuesta institucional de noviembre de 2026 concentra la primera prueba piloto en **una unidad curricular y una sección**, con un docente colaborador y autorización institucional. Su alcance comprende:
+El curso propuesto provisionalmente para el piloto es **Química Orgánica**, del programa de Ingeniería de Alimentos de la **UNESR, Núcleo Araure**. Todavía no existe autorización institucional para realizar pruebas con datos reales. La propuesta requiere un facilitador colaborador y aprobación institucional. Su alcance previsto comprende:
 
 - **QR dinámico**: el profesor abre una sesión y muestra códigos de vigencia corta con renovación continua (30 segundos es una propuesta inicial, no una decisión final). La validación debe ocurrir de manera segura desde un servicio o mecanismo confiable. El código QR no contiene datos personales.
 - **Registro manual de respaldo**: el profesor puede registrar asistencias en caso de fallos de conexión, batería o disponibilidad del dispositivo del estudiante. Se conserva trazabilidad del registro.
-- **Listado de estudiantes por sección**: cada asistencia debe quedar asociada a la matrícula autorizada de una sección; escanear un QR no implica inscribirse automáticamente.
+- **Listado de participantes por curso**: cada asistencia deberá quedar asociada a una matrícula autorizada; escanear un QR no implica inscribirse automáticamente.
 - **Reportes descargables**: exportación a PDF, Excel y DOCX con respaldos según el procedimiento acordado con la institución.
 - **Privacidad y seguridad**: únicamente datos mínimos autorizados; control de acceso por rol y sección, historial de cambios y protección de información personal.
 
@@ -91,7 +91,7 @@ Consulta `docs/` para decisiones, alcance del piloto, riesgos y criterios de seg
 
 ## Ejecutar el prototipo web
 
-La versión 0.1.0 ofrece pantallas de demostración con datos ficticios. No incluye autenticación, registro de asistencia ni QR funcional.
+La versión 0.1.1 ofrece pantallas de demostración con datos ficticios. El curso provisional se configura en `apps/web/src/lib/demo-courses.ts`. No incluye autenticación, registro de asistencia ni QR funcional. No existe autorización institucional para pruebas con datos reales.
 
 Requisitos: Node.js 20.9 o posterior y npm. Desde la raíz del repositorio:
 

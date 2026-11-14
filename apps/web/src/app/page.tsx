@@ -1,3 +1,23 @@
 import Link from 'next/link';
-import { Header, Footer } from '@/components/ui';
-export default function Home() { return <><Header/><main><section className="hero wrap"><div className="hero-copy"><div className="eyebrow"><span className="spark">✳</span> UN NUEVO ESPACIO PARA APRENDER</div><h1>La vida académica,<br/><em>más cerca.</em></h1><p>Un espacio sencillo para conectar docentes y estudiantes, y hacer que cada encuentro cuente.</p><div className="hero-actions"><Link className="button primary" href="/docente">Entrar como docente <span>↗</span></Link><Link className="button secondary" href="/estudiante">Entrar como estudiante <span>↗</span></Link></div><div className="demo-note"><span>✦</span><p><strong>Estás explorando una demostración.</strong><br/>Los datos y actividades que verás son ficticios.</p></div></div><div className="hero-art" aria-hidden="true"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><div className="art-card"><div className="art-top"><span className="art-icon">✳</span><span className="art-label">TU ESPACIO ACADÉMICO</span></div><div className="art-title">Cada encuentro<br/><i>cuenta.</i></div><div className="art-lines"><span/><span/></div><div className="art-bottom"><span>CRECEMOS EN COMUNIDAD</span><b>↗</b></div></div><div className="floating float-one">✳ <span>Aprender<br/><b>nos conecta</b></span></div><div className="floating float-two"><span className="float-dot">✓</span><span>Un paso a la vez<br/><b>Hacia adelante</b></span></div></div></section><section className="values wrap" aria-label="Principios de NEXU"><div><span>01 / CLARIDAD</span><p>Lo esencial, siempre a la vista.</p></div><div><span>02 / CONEXIÓN</span><p>Un espacio para encontrarnos.</p></div><div><span>03 / PROGRESO</span><p>Avanzar empieza aquí.</p></div></section></main><Footer/></>; }
+import { Header } from '@/components/ui';
+import { demoCourses } from '@/lib/demo-courses';
+
+export default function Home() {
+  return (
+    <>
+      <Header />
+      <main className="content welcome">
+        <p className="eyebrow">ESPACIO ACADÉMICO</p>
+        <h1>Bienvenido a NEXU</h1>
+        <p className="intro">Una plataforma de apoyo a la gestión académica y la asistencia.</p>
+        <div className="pilot-summary"><span>CURSO PILOTO PROVISIONAL</span><strong>{demoCourses[0].name}</strong><p>{demoCourses[0].program}<br />{demoCourses[0].institution} · {demoCourses[0].campus}</p></div>
+        <p className="choice-label">Selecciona tu perfil</p>
+        <div className="actions">
+          <Link className="button primary" href="/docente">Entrar como facilitador <span aria-hidden="true">→</span></Link>
+          <Link className="button secondary" href="/estudiante">Entrar como participante <span aria-hidden="true">→</span></Link>
+        </div>
+        <p className="disclaimer">Modo demostración · Datos ficticios</p>
+      </main>
+    </>
+  );
+}
