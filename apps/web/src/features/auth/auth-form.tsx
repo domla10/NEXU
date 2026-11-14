@@ -1,15 +1,20 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState, useSyncExternalStore, type FormEvent } from 'react';
 import Link from 'next/link';
 
 type Mode = 'login' | 'register' | 'recovery';
 type Field = 'name' | 'email' | 'password' | 'confirm';
 type Errors = Partial<Record<Field, string>>;
 
+const subscribe = () => () => {};
+const clientReady = () => true;
+const serverReady = () => false;
+
 export function AuthForm({ mode }: { mode: Mode }) {
   const [errors, setErrors] = useState<Errors>({});
   const [message, setMessage] = useState('');
+  const ready = useSyncExternalStore(subscribe, clientReady, serverReady);
   const register = mode === 'register';
   const recovery = mode === 'recovery';
 
@@ -32,15 +37,16 @@ export function AuthForm({ mode }: { mode: Mode }) {
   }
 
   function field(id: Field, label: string, type: string, autoComplete: string) {
-    return <div className="field"><label htmlFor={id}>{label}</label><input id={id} name={id} type={type} autoComplete={autoComplete} aria-invalid={!!errors[id]} aria-describedby={errors[id] ? `${id}-error` : undefined} />{errors[id] && <p className="field-error" id={`${id}-error`}>{errors[id]}</p>}</div>;
+    return <div className="field"><label htmlFor={id}>{label}</label><input id={id} name={id} type={type} autoComplete={autoComplete} disabled={!ready} required aria-invalid={!!errors[id]} aria-describedby={errors[id] ? `${id}-error` : undefined} />{errors[id] && <p className="field-error" id={`${id}-error`}>{errors[id]}</p>}</div>;
   }
 
-  return <><div className="form-card"><p className="demo-banner">Demostración: la autenticación aún no está disponible. No uses credenciales reales.</p><form onSubmit={submit} noValidate>
+  return <><div className="form-card"><p className="demo-banner">Demostración: la autenticación aún no está disponible. No uses credenciales reales.</p><noscript><p className="field-error">Activa JavaScript para utilizar este formulario de demostración.</p></noscript><form method="post" onSubmit={submit} noValidate>
     {register && field('name', 'Nombre completo', 'text', 'name')}
     {field('email', 'Correo electrónico', 'email', 'email')}
     {!recovery && field('password', 'Contraseña', 'password', register ? 'new-password' : 'current-password')}
     {register && field('confirm', 'Confirmar contraseña', 'password', 'new-password')}
+    {Object.keys(errors).length > 0 && <p className="field-error" role="alert">Revisa los campos indicados.</p>}
     {message && <p className="form-message" role="status">{message}</p>}
-    <button className="button primary form-submit" type="submit">{recovery ? 'Validar solicitud de ejemplo' : register ? 'Validar registro de ejemplo' : 'Validar inicio de sesión de ejemplo'}</button>
+    <button className="button primary form-submit" type="submit" disabled={!ready}>{recovery ? 'Validar solicitud de ejemplo' : register ? 'Validar registro de ejemplo' : 'Validar inicio de sesión de ejemplo'}</button>
   </form></div><div className="auth-links">{mode !== 'login' && <Link href="/login">Volver a iniciar sesión</Link>}{mode === 'login' && <><Link href="/forgot-password">¿Olvidaste tu contraseña?</Link><Link href="/register">Crear cuenta</Link></>}<Link href="/">Explorar los paneles de demostración</Link></div></>;
 }

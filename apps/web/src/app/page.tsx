@@ -4,7 +4,7 @@ import { Header } from '@/components/ui';
 export default function Home() {
   return (
     <>
-      <Header />
+      <Header home />
       <main className="content welcome">
         <p className="eyebrow">ESPACIO ACADÉMICO</p>
         <h1>Bienvenido a NEXU</h1>
