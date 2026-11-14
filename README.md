@@ -2,7 +2,7 @@
 
 **NEXU** es una plataforma digital de apoyo a la gestión académica, planteada inicialmente como una **aplicación web progresiva (PWA)** para la Universidad Nacional Experimental Simón Rodríguez (UNESR), Venezuela.
 
-> **Estado:** planificación y preparación de un prototipo. El repositorio contiene únicamente la estructura inicial y documentación, no una aplicación funcional.
+> **Estado:** prototipo visual 0.1.0 con pantallas de demostración y datos ficticios; aún no registra asistencias ni cuenta con autenticación.
 
 ## Propósito
 
@@ -61,7 +61,7 @@ Las carpetas están reservadas para el desarrollo. La separación `services/` no
 
 ## Tecnología por decidir
 
-Se han estudiado **Next.js**, **Supabase/PostgreSQL**, **Cloudflare Pages** o **Vercel**, así como alternativas de almacenamiento local y respaldo. **Ninguna combinación se considera aprobada o implementada todavía.** La conectividad entre el teléfono del alumno y el registro del docente, la estrategia offline, el alojamiento, la política de backups y las condiciones de los planes gratuitos siguen por validar.
+Se han estudiado **Next.js**, **Supabase/PostgreSQL**, **Cloudflare Pages** o **Vercel**, así como alternativas de almacenamiento local y respaldo. **El prototipo web usa Next.js; las demás tecnologías no se consideran aprobadas ni implementadas todavía.** La conectividad entre el teléfono del alumno y el registro del docente, la estrategia offline, el alojamiento, la política de backups y las condiciones de los planes gratuitos siguen por validar.
 
 ## Principios de diseño
 
@@ -88,3 +88,17 @@ Se han estudiado **Next.js**, **Supabase/PostgreSQL**, **Cloudflare Pages** o **
 ## Documentación
 
 Consulta `docs/` para decisiones, alcance del piloto, riesgos y criterios de seguridad. La estructura está lista para incorporar código sin prejuzgar todas las tecnologías.
+
+## Ejecutar el prototipo web
+
+La versión 0.1.0 ofrece pantallas de demostración con datos ficticios. No incluye autenticación, registro de asistencia ni QR funcional.
+
+Requisitos: Node.js 20.9 o posterior y npm. Desde la raíz del repositorio:
+
+```bash
+cd apps/web
+npm ci
+npm run dev
+```
+
+Abre `http://localhost:3000`. Para comprobar la aplicación ejecuta `npm run typecheck`, `npm run lint` y `npm run build`. Para acceder desde un teléfono en la misma red, inicia `npm run dev -- --hostname 0.0.0.0` y abre `http://<IP-local-del-equipo>:3000` en el teléfono; la red y el cortafuegos deben permitir la conexión. En un entorno Cloud remoto se necesita una URL de vista previa o un túnel seguro.
