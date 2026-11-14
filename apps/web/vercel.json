@@ -1,0 +1,7 @@
+{
+  "git": {
+    "deploymentEnabled": {
+      "feature/nexu-database-foundation": false
+    }
+  }
+}

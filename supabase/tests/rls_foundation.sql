@@ -26,8 +26,10 @@ insert into auth.users(id, email, email_confirmed_at, raw_user_meta_data) values
 ('10000000-0000-0000-0000-000000000002','facilitador@example.test',now(),'{"full_name":"Facilitador prueba","role":"administrador"}'),
 ('10000000-0000-0000-0000-000000000003','participante@example.test',now(),'{"full_name":"Participante prueba","role":"administrador"}'),
 ('10000000-0000-0000-0000-000000000004','otra@example.test',now(),'{"full_name":"Otra persona"}'),
-('10000000-0000-0000-0000-000000000005','pendiente@example.test',null,'{"full_name":"","role":"administrador"}');
-select pg_temp.check_true((select count(*)=5 from public.profiles where role='participante' and id::text like '10000000-%'), 'registro siempre crea participante');
+('10000000-0000-0000-0000-000000000005','pendiente@example.test',null,'{"full_name":"","role":"administrador"}'),
+('10000000-0000-0000-0000-000000000006','nombre@example.test',now(),jsonb_build_object('full_name', repeat('x',119) || '  y', 'role', 'administrador'));
+select pg_temp.check_true((select count(*)=6 from public.profiles where role='participante' and id::text like '10000000-%'), 'registro siempre crea participante');
+select pg_temp.check_true((select char_length(full_name)=119 and full_name=btrim(full_name) from public.profiles where id='10000000-0000-0000-0000-000000000006'), 'nombre truncado sin espacios finales');
 select pg_temp.check_true((select full_name='Nombre pendiente' from public.profiles where id='10000000-0000-0000-0000-000000000005'), 'nombre vacío');
 -- Preparación local controlada del primer administrador; actor nulo y auditado.
 update public.profiles set role='administrador' where id='10000000-0000-0000-0000-000000000001';
@@ -37,6 +39,7 @@ select pg_temp.expect_denied('select * from public.courses', 'lectura anónima d
 select pg_temp.expect_denied('select * from public.profiles', 'lectura anónima de perfiles');
 select pg_temp.expect_denied('select * from public.enrollments', 'lectura anónima de inscripciones');
 select pg_temp.expect_denied('select * from public.course_facilitators', 'lectura anónima de asignaciones');
+select pg_temp.expect_denied($sql$select public.set_profile_role('10000000-0000-0000-0000-000000000003','administrador')$sql$, 'función administrativa por anon');
 reset role;
 
 set local role authenticated;
@@ -74,6 +77,8 @@ select pg_temp.expect_denied($sql$insert into public.enrollments(course_id,parti
 select pg_temp.expect_denied($sql$insert into public.courses(name) values ('curso no autorizado')$sql$, 'crear curso como participante');
 select pg_temp.expect_denied($sql$insert into public.course_facilitators(course_id,facilitator_id) select course_id,'10000000-0000-0000-0000-000000000003' from public.enrollments limit 1$sql$, 'asignación como participante');
 select pg_temp.expect_denied($sql$select * from nexu_private.admin_audit$sql$, 'acceso a auditoría');
+select pg_temp.check_true(not has_function_privilege('authenticated','nexu_private.create_profile_for_auth_user()','execute'), 'trigger privilegiado no ejecutable por API');
+select pg_temp.check_true(not has_function_privilege('anon','public.set_profile_role(uuid,public.academic_role)','execute'), 'función de rol no ejecutable por anónimo');
 
 select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000002',true);
 select pg_temp.check_true((select count(*)=1 from public.enrollments), 'facilitador ve solo inscripciones de su curso');
@@ -86,7 +91,19 @@ select pg_temp.expect_denied($sql$select public.set_profile_role('10000000-0000-
 with changed as (update public.courses set name='Modificado sin permiso' where id=current_setting('nexu_test.other_course')::uuid returning id) select pg_temp.check_true((select count(*)=0 from changed), 'facilitador no modifica curso ajeno');
 with changed as (update public.courses set name='Modificado sin permiso' where name='Curso de prueba' returning id)
   select pg_temp.check_true((select count(*)=0 from changed), 'facilitador no modifica cursos');
+select set_config('request.jwt.claim.sub','10000000-0000-0000-0000-000000000001',true);
+delete from public.course_facilitators where facilitator_id='10000000-0000-0000-0000-000000000002';
+select public.set_profile_role('10000000-0000-0000-0000-000000000002','participante');
+select pg_temp.check_true((select role='participante' from public.profiles where id='10000000-0000-0000-0000-000000000002'), 'cambio de rol tras retirar asignación');
 reset role;
+-- Simula una concesión explícita: BYPASSRLS no sustituye la comprobación de identidad en la RPC.
+grant execute on function public.set_profile_role(uuid, public.academic_role) to service_role;
+set local role service_role;
+select set_config('request.jwt.claim.sub','',true);
+select pg_temp.expect_denied($sql$select public.set_profile_role('10000000-0000-0000-0000-000000000003','administrador')$sql$, 'service_role sin identidad administrativa en la RPC');
+reset role;
+select pg_temp.check_true(not exists (select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where p.prosecdef and n.nspname in ('nexu_private','public') and (n.nspname='nexu_private' or p.proname='set_profile_role') and not coalesce('search_path=""'=any(p.proconfig),false)), 'search_path protegido en funciones privilegiadas');
+select pg_temp.check_true(not exists (select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace join pg_roles owner on owner.oid=p.proowner where p.prosecdef and (n.nspname='nexu_private' or (n.nspname='public' and p.proname='set_profile_role')) and not (owner.rolsuper or owner.rolbypassrls)), 'propietario privilegiado para evitar recursión RLS');
 select pg_temp.check_true((select count(*)>=6 from nexu_private.admin_audit where action in ('profiles.update','courses.insert','course_facilitators.insert','enrollments.insert')), 'cambios administrativos auditados');
 select pg_temp.check_true((select count(*)=1 from nexu_private.admin_audit where action='profiles.update' and actor_id is null and new_role='administrador'), 'bootstrap auditado sin actor JWT');
 rollback;

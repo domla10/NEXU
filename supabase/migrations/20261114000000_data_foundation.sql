@@ -100,7 +100,7 @@ language plpgsql security definer set search_path = '' as $$
 declare safe_name text;
 begin
   if jsonb_typeof(new.raw_user_meta_data -> 'full_name') = 'string' then
-    safe_name := left(btrim(regexp_replace(new.raw_user_meta_data ->> 'full_name', '[[:cntrl:]]', '', 'g')), 120);
+    safe_name := btrim(left(btrim(regexp_replace(new.raw_user_meta_data ->> 'full_name', '[[:cntrl:]]', '', 'g')), 120));
   end if;
   insert into public.profiles (id, full_name, role)
   values (new.id, coalesce(nullif(safe_name, ''), 'Nombre pendiente'), 'participante');
