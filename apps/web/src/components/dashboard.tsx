@@ -7,12 +7,10 @@ type PendingItem = { title: string; description: string };
 const participantItems: PendingItem[] = [
   { title: 'Historial de asistencia', description: 'Aún no hay registros. El control de asistencia está pendiente.' },
   { title: 'Registro con QR', description: 'La lectura y el registro de asistencia mediante QR estarán disponibles próximamente.' },
-  { title: 'Evaluaciones y calificaciones', description: 'No hay evaluaciones disponibles. Las calificaciones serán informativas y no sustituyen los registros oficiales.' },
 ];
 const facilitatorItems: PendingItem[] = [
   { title: 'Participantes inscritos', description: 'Aún no hay listas disponibles. La gestión de participantes está pendiente.' },
   { title: 'Sesiones de asistencia con QR', description: 'La creación y gestión de sesiones estará disponible próximamente.' },
-  { title: 'Evaluaciones y publicación de calificaciones', description: 'La gestión y publicación de calificaciones está pendiente. Las calificaciones serán informativas y no sustituyen los registros oficiales.' },
 ];
 export function Dashboard({ role }: { role: AcademicRole }) {
   const participant = role === 'participante';

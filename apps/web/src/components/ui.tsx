@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { DemoCourse } from '@/lib/demo-courses';
 
-export function Header({ role }: { role?: 'facilitador' | 'participante' }) {
+export function Header({ role, home = false }: { role?: 'facilitador' | 'participante'; home?: boolean }) {
   return (
     <header className="header">
       <div className="header-inner">
@@ -10,7 +10,7 @@ export function Header({ role }: { role?: 'facilitador' | 'participante' }) {
           <span>NEXU<small>ESPACIO ACADÉMICO</small></span>
         </Link>
         <nav aria-label="Navegación principal">
-          <Link href="/" aria-current={role ? undefined : 'page'}>Inicio</Link>
+          <Link href="/" aria-current={home ? 'page' : undefined}>Inicio</Link>
           {role && <span className="nav-current" aria-current="page">{role === 'facilitador' ? 'Facilitador' : 'Participante'}</span>}
         </nav>
       </div>
