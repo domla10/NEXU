@@ -102,3 +102,9 @@ npm run dev
 ```
 
 Abre `http://localhost:3000`. Para comprobar la aplicación ejecuta `npm run typecheck`, `npm run lint` y `npm run build`. Para acceder desde un teléfono en la misma red, inicia `npm run dev -- --hostname 0.0.0.0` y abre `http://<IP-local-del-equipo>:3000` en el teléfono; la red y el cortafuegos deben permitir la conexión. En un entorno Cloud remoto se necesita una URL de vista previa o un túnel seguro.
+
+## Frontend de autenticación y paneles
+
+Las rutas `/login`, `/register` y `/forgot-password` muestran formularios de demostración que validan la interfaz: no crean cuentas, no inician sesión y no envían correos. No se deben introducir credenciales reales. Las rutas existentes `/docente` y `/estudiante` muestran paneles públicos con datos ficticios; cambiar de vista no concede permisos. Los roles reales deberán validarse en el servidor cuando exista un backend. El curso de muestra permanece en `apps/web/src/lib/demo-courses.ts`.
+
+Los tipos de evaluaciones y escalas configurables están en `apps/web/src/types/academic.ts`. La escala de 1 a 5 es un ejemplo provisional y no convierte ni calcula notas. Las calificaciones futuras serán informativas y no sustituyen los registros oficiales. El piloto sigue sujeto a autorización institucional antes de usar datos reales.

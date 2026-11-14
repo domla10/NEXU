@@ -1,23 +1,5 @@
 import Link from 'next/link';
 import { Header } from '@/components/ui';
-import { demoCourses } from '@/lib/demo-courses';
-
 export default function Home() {
-  return (
-    <>
-      <Header />
-      <main className="content welcome">
-        <p className="eyebrow">ESPACIO ACADÉMICO</p>
-        <h1>Bienvenido a NEXU</h1>
-        <p className="intro">Una plataforma de apoyo a la gestión académica y la asistencia.</p>
-        <div className="pilot-summary"><span>CURSO PILOTO PROVISIONAL</span><strong>{demoCourses[0].name}</strong><p>{demoCourses[0].program}<br />{demoCourses[0].institution} · {demoCourses[0].campus}</p></div>
-        <p className="choice-label">Selecciona tu perfil</p>
-        <div className="actions">
-          <Link className="button primary" href="/docente">Entrar como facilitador <span aria-hidden="true">→</span></Link>
-          <Link className="button secondary" href="/estudiante">Entrar como participante <span aria-hidden="true">→</span></Link>
-        </div>
-        <p className="disclaimer">Modo demostración · Datos ficticios</p>
-      </main>
-    </>
-  );
+  return <><Header /><main className="content welcome"><p className="eyebrow">ESPACIO ACADÉMICO</p><h1>Bienvenido a NEXU</h1><p className="intro">Una plataforma de apoyo para organizar la asistencia y la actividad académica.</p><div className="welcome-card"><span className="accent-line" aria-hidden="true" /><h2>Tu espacio académico</h2><p>Accede a cursos, asistencia y evaluaciones desde un solo lugar.</p></div><div className="actions"><Link className="button primary" href="/login">Iniciar sesión <span aria-hidden="true">→</span></Link><Link className="button secondary" href="/register">Crear cuenta <span aria-hidden="true">→</span></Link></div><div className="demo-section"><p className="choice-label">Explorar paneles de demostración</p><p className="intro">Vistas públicas con información ficticia. No requieren inicio de sesión.</p><div className="demo-links"><Link href="/estudiante">Participante <span aria-hidden="true">→</span></Link><Link href="/docente">Facilitador <span aria-hidden="true">→</span></Link></div></div></main></>;
 }
