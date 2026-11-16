@@ -6,14 +6,18 @@ No crea ni modifica nada hasta que el operador autorice expresamente cada fase.
 """
 import getpass
 import json
+import math
 import secrets
 import sys
+import time
+from email.utils import parsedate_to_datetime
 import urllib.error
 import urllib.parse
 import urllib.request
 
 PROJECT_URL = 'https://hwckbmhfbsrwqohhmrom.supabase.co'  # NEXU-TEST exclusivamente
 KINDS = ('admin', 'facilitador', 'participante')
+retry_not_before = 0.0
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, *args, **kwargs):
@@ -32,7 +36,25 @@ def check(condition, label):
 def ask(prompt):
     return input(prompt).strip()
 
+def retry_after_seconds(value, now=None):
+    """Acepta Retry-After en segundos o fecha HTTP; sin encabezado, espera una hora."""
+    if not value:
+        return 3600
+    try:
+        if value.strip().isdigit():
+            return int(value.strip())
+        date = parsedate_to_datetime(value)
+        if date.tzinfo is None:
+            return 3600
+        return max(0, math.ceil(date.timestamp() - (time.time() if now is None else now)))
+    except (ValueError, TypeError, OverflowError):
+        return 3600
+
+def retry_remaining():
+    return max(0, math.ceil(retry_not_before - time.monotonic()))
+
 def api(key, path, method='GET', body=None, token=None, prefer=None):
+    global retry_not_before
     headers = {'apikey': key, 'Content-Type': 'application/json'}
     if token:
         headers['Authorization'] = 'Bearer ' + token
@@ -45,6 +67,8 @@ def api(key, path, method='GET', body=None, token=None, prefer=None):
             raw = response.read()
             return response.status, json.loads(raw) if raw else None
     except urllib.error.HTTPError as exc:
+        if exc.code == 429 and path == '/auth/v1/signup':
+            retry_not_before = time.monotonic() + retry_after_seconds(exc.headers.get('Retry-After'))
         try:
             data = json.loads(exc.read())
         except (ValueError, UnicodeError):
@@ -83,6 +107,12 @@ def main():
         email = suffix_email(base_email, marker, kind)
         password = secrets.token_urlsafe(36)
         while True:
+            remaining = retry_remaining()
+            if remaining > 0:
+                print(f'Espera al menos {remaining} segundos antes de reintentar el registro.', flush=True)
+                if ask('Cuando termine la espera, escribe REINTENTAR: ') != 'REINTENTAR':
+                    raise CheckFailure('Ejecución detenida durante la espera.')
+                continue
             status, response = api(key, '/auth/v1/signup', 'POST', {
                 'email': email, 'password': password,
                 'data': {'full_name': 'Identidad ficticia de prueba', 'nexu_test_run': marker,

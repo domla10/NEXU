@@ -37,5 +37,17 @@ class SessionSafetyTests(unittest.TestCase):
         handler = module.NoRedirect()
         self.assertIsNone(handler.redirect_request(None, None, 302, '', {}, 'https://example.test'))
 
+    def test_retry_after_formats_and_fallback(self):
+        self.assertEqual(module.retry_after_seconds('90'), 90)
+        self.assertEqual(module.retry_after_seconds('Thu, 01 Jan 1970 00:02:00 GMT', now=60), 60)
+        self.assertEqual(module.retry_after_seconds(None), 3600)
+        self.assertEqual(module.retry_after_seconds('inválido'), 3600)
+
+    def test_retry_remaining_uses_monotonic_clock(self):
+        with patch.object(module, 'retry_not_before', 110), patch.object(module.time, 'monotonic', return_value=100):
+            self.assertEqual(module.retry_remaining(), 10)
+        with patch.object(module, 'retry_not_before', 110), patch.object(module.time, 'monotonic', return_value=111):
+            self.assertEqual(module.retry_remaining(), 0)
+
 if __name__ == '__main__':
     unittest.main()
