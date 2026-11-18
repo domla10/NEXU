@@ -83,6 +83,68 @@ def suffix_email(base, marker, kind):
         raise CheckFailure('Introduce una dirección base sin alias; la bandeja debe estar bajo tu control.')
     return f'{name}+nexu{marker[:8]}{kind}@{domain}'
 
+def authenticate_existing(key, email, password, kind, marker):
+    status, session = api(key, '/auth/v1/token?grant_type=password', 'POST', {'email': email, 'password': password})
+    if status != 200 or not isinstance(session, dict):
+        raise CheckFailure(f'No se pudo iniciar sesión en la identidad {kind} (HTTP {status}).')
+    user = session.get('user') or {}
+    metadata = user.get('user_metadata') or {}
+    if not (session.get('access_token') and user.get('id') and user.get('email_confirmed_at')
+            and metadata.get('nexu_test_run') == marker and metadata.get('nexu_test_identity') == kind):
+        raise CheckFailure('La identidad autenticada no corresponde a la ejecución confirmada.')
+    return {'id': user['id'], 'token': session['access_token']}
+
+def run_security_tests(key, users, marker):
+    admin = users['admin']['token']
+    facilitator = users['facilitador']['token']
+    participant = users['participante']['token']
+    status, profiles = api(key, '/rest/v1/profiles?select=id,role', token=admin)
+    check(status == 200 and any(p.get('id') == users['admin']['id'] and p.get('role') == 'administrador' for p in (profiles or [])), 'bootstrap del administrador confirmado con sesión real')
+    title = 'Curso ficticio NEXU ' + marker[:8]
+    other_title = 'Curso ajeno ficticio NEXU ' + marker[:8]
+    for name in (title, other_title):
+        status, existing = api(key, '/rest/v1/courses?select=id&name=eq.' + urllib.parse.quote(name, safe=''), token=admin)
+        check(status == 200 and isinstance(existing, list) and not existing, 'no hay cursos existentes para esta ejecución')
+    status, _ = api(key, '/rest/v1/rpc/set_profile_role', 'POST', {'target_id': users['facilitador']['id'], 'new_role': 'facilitador'}, admin)
+    check(200 <= status < 300, f'administrador asigna facilitador mediante RPC (HTTP {status})')
+    status, error = api(key, '/rest/v1/rpc/set_profile_role', 'POST', {'target_id': users['admin']['id'], 'new_role': 'participante'}, admin)
+    check(status == 403 and isinstance(error, dict) and error.get('code') == '42501', f'administrador no cambia su propio rol (HTTP {status})')
+    status, courses = api(key, '/rest/v1/courses?select=id', 'POST', {'name': title}, admin, 'return=representation')
+    check(status in (200, 201) and isinstance(courses, list) and len(courses) == 1, f'administrador crea curso de prueba (HTTP {status})')
+    course_id = courses[0]['id']
+    status, other_courses = api(key, '/rest/v1/courses?select=id', 'POST', {'name': other_title}, admin, 'return=representation')
+    check(status in (200, 201) and isinstance(other_courses, list) and len(other_courses) == 1, f'administrador crea curso ajeno de prueba (HTTP {status})')
+    other_course_id = other_courses[0]['id']
+    for table, field, kind in [('course_facilitators', 'facilitator_id', 'facilitador'), ('enrollments', 'participant_id', 'participante')]:
+        status, _ = api(key, '/rest/v1/' + table, 'POST', {'course_id': course_id, field: users[kind]['id']}, admin)
+        check(status in (200, 201, 204), f'administrador crea relación {table} (HTTP {status})')
+    status, updated = api(key, '/rest/v1/profiles?id=eq.' + users['participante']['id'] + '&select=id,full_name', 'PATCH', {'full_name': 'Participante de prueba'}, participant, 'return=representation')
+    check(status == 200 and isinstance(updated, list) and len(updated) == 1 and updated[0].get('full_name') == 'Participante de prueba', f'participante puede editar su nombre (HTTP {status})')
+    status, rows = api(key, '/rest/v1/courses?select=id', token=participant)
+    check(status == 200 and {x.get('id') for x in (rows or [])} == {course_id}, 'participante solo ve su curso inscrito')
+    status, rows = api(key, '/rest/v1/enrollments?select=participant_id', token=participant)
+    check(status == 200 and all(x.get('participant_id') == users['participante']['id'] for x in (rows or [])) and len(rows or []) == 1, 'participante solo ve su inscripción')
+    status, rows = api(key, '/rest/v1/profiles?select=id', token=participant)
+    check(status == 200 and len(rows or []) == 1 and rows[0].get('id') == users['participante']['id'], 'participante no ve perfiles ajenos')
+    status, error = api(key, '/rest/v1/profiles?id=eq.' + users['participante']['id'], 'PATCH', {'role': 'administrador'}, participant)
+    check(status == 403 and isinstance(error, dict) and error.get('code') == '42501', f'participante no cambia su rol (HTTP {status})')
+    status, error = api(key, '/rest/v1/rpc/set_profile_role', 'POST', {'target_id': users['participante']['id'], 'new_role': 'administrador'}, participant)
+    check(status == 403 and isinstance(error, dict) and error.get('code') == '42501', f'participante no eleva su rol por RPC (HTTP {status})')
+    status, error = api(key, '/rest/v1/enrollments', 'POST', {'course_id': other_course_id, 'participant_id': users['participante']['id']}, participant)
+    check(status == 403 and isinstance(error, dict) and error.get('code') == '42501', f'participante no puede inscribirse (HTTP {status})')
+    status, rows = api(key, '/rest/v1/profiles?select=id', token=facilitator)
+    check(status == 200 and {x.get('id') for x in (rows or [])} == {users['participante']['id'], users['facilitador']['id']}, 'facilitador ve su perfil y el participante del curso')
+    status, rows = api(key, '/rest/v1/courses?select=id', token=facilitator)
+    check(status == 200 and {x.get('id') for x in (rows or [])} == {course_id}, 'facilitador solo ve el curso asignado')
+    status, changed = api(key, '/rest/v1/courses?id=eq.' + other_course_id + '&select=id', 'PATCH', {'name': 'Cambio no autorizado'}, facilitator, 'return=representation')
+    check(status == 200 and changed == [], f'facilitador no modifica un curso ajeno (HTTP {status})')
+    status, error = api(key, '/rest/v1/course_facilitators', 'POST', {'course_id': other_course_id, 'facilitator_id': users['facilitador']['id']}, facilitator)
+    check(status == 403 and isinstance(error, dict) and error.get('code') == '42501', f'facilitador no puede asignarse cursos (HTTP {status})')
+    status, _ = api(key, '/rest/v1/enrollments', 'POST', {'course_id': course_id, 'participant_id': users['participante']['id']}, admin)
+    check(status == 409, f'no se permiten inscripciones duplicadas (HTTP {status})')
+    print('Prueba terminada. Las cuentas y los datos de prueba no se eliminan automáticamente.', flush=True)
+
+
 def main():
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         raise CheckFailure('Se requiere una terminal interactiva para proteger la entrada.')
@@ -153,54 +215,38 @@ def main():
         })
         check(status == 200 and isinstance(session, dict) and bool(session.get('access_token')), f'sesión renovada de {kind} (HTTP {status})')
         users[kind]['token'] = session['access_token']
-    admin = users['admin']['token']
-    facilitator = users['facilitador']['token']
-    participant = users['participante']['token']
-    status, profiles = api(key, '/rest/v1/profiles?select=id,role', token=admin)
-    check(status == 200 and any(p.get('id') == users['admin']['id'] and p.get('role') == 'administrador' for p in (profiles or [])), 'bootstrap del administrador confirmado con sesión real')
-    status, _ = api(key, '/rest/v1/rpc/set_profile_role', 'POST', {'target_id': users['facilitador']['id'], 'new_role': 'facilitador'}, admin)
-    check(200 <= status < 300, f'administrador asigna facilitador mediante RPC (HTTP {status})')
-    status, error = api(key, '/rest/v1/rpc/set_profile_role', 'POST', {'target_id': users['admin']['id'], 'new_role': 'participante'}, admin)
-    check(status == 403 and isinstance(error, dict) and error.get('code') == '42501', f'administrador no cambia su propio rol (HTTP {status})')
-    title = 'Curso ficticio NEXU ' + marker[:8]
-    status, courses = api(key, '/rest/v1/courses?select=id', 'POST', {'name': title}, admin, 'return=representation')
-    check(status in (200, 201) and isinstance(courses, list) and len(courses) == 1, f'administrador crea curso de prueba (HTTP {status})')
-    course_id = courses[0]['id']
-    status, other_courses = api(key, '/rest/v1/courses?select=id', 'POST', {'name': 'Curso ajeno ficticio NEXU ' + marker[:8]}, admin, 'return=representation')
-    check(status in (200, 201) and isinstance(other_courses, list) and len(other_courses) == 1, f'administrador crea curso ajeno de prueba (HTTP {status})')
-    other_course_id = other_courses[0]['id']
-    for table, field, kind in [('course_facilitators', 'facilitator_id', 'facilitador'), ('enrollments', 'participant_id', 'participante')]:
-        status, _ = api(key, '/rest/v1/' + table, 'POST', {'course_id': course_id, field: users[kind]['id']}, admin)
-        check(status in (200, 201, 204), f'administrador crea relación {table} (HTTP {status})')
-    status, updated = api(key, '/rest/v1/profiles?id=eq.' + users['participante']['id'] + '&select=id,full_name', 'PATCH', {'full_name': 'Participante de prueba'}, participant, 'return=representation')
-    check(status == 200 and isinstance(updated, list) and len(updated) == 1 and updated[0].get('full_name') == 'Participante de prueba', f'participante puede editar su nombre (HTTP {status})')
-    status, rows = api(key, '/rest/v1/courses?select=id', token=participant)
-    check(status == 200 and {x.get('id') for x in (rows or [])} == {course_id}, 'participante solo ve su curso inscrito')
-    status, rows = api(key, '/rest/v1/enrollments?select=participant_id', token=participant)
-    check(status == 200 and all(x.get('participant_id') == users['participante']['id'] for x in (rows or [])) and len(rows or []) == 1, 'participante solo ve su inscripción')
-    status, rows = api(key, '/rest/v1/profiles?select=id', token=participant)
-    check(status == 200 and len(rows or []) == 1 and rows[0].get('id') == users['participante']['id'], 'participante no ve perfiles ajenos')
-    status, error = api(key, '/rest/v1/profiles?id=eq.' + users['participante']['id'], 'PATCH', {'role': 'administrador'}, participant)
-    check(status == 403 and isinstance(error, dict) and error.get('code') == '42501', f'participante no cambia su rol (HTTP {status})')
-    status, error = api(key, '/rest/v1/rpc/set_profile_role', 'POST', {'target_id': users['participante']['id'], 'new_role': 'administrador'}, participant)
-    check(status == 403 and isinstance(error, dict) and error.get('code') == '42501', f'participante no eleva su rol por RPC (HTTP {status})')
-    status, error = api(key, '/rest/v1/enrollments', 'POST', {'course_id': other_course_id, 'participant_id': users['participante']['id']}, participant)
-    check(status == 403 and isinstance(error, dict) and error.get('code') == '42501', f'participante no puede inscribirse (HTTP {status})')
-    status, rows = api(key, '/rest/v1/profiles?select=id', token=facilitator)
-    check(status == 200 and {x.get('id') for x in (rows or [])} == {users['participante']['id'], users['facilitador']['id']}, 'facilitador ve su perfil y el participante del curso')
-    status, rows = api(key, '/rest/v1/courses?select=id', token=facilitator)
-    check(status == 200 and {x.get('id') for x in (rows or [])} == {course_id}, 'facilitador solo ve el curso asignado')
-    status, changed = api(key, '/rest/v1/courses?id=eq.' + other_course_id + '&select=id', 'PATCH', {'name': 'Cambio no autorizado'}, facilitator, 'return=representation')
-    check(status == 200 and changed == [], f'facilitador no modifica un curso ajeno (HTTP {status})')
-    status, error = api(key, '/rest/v1/course_facilitators', 'POST', {'course_id': other_course_id, 'facilitator_id': users['facilitador']['id']}, facilitator)
-    check(status == 403 and isinstance(error, dict) and error.get('code') == '42501', f'facilitador no puede asignarse cursos (HTTP {status})')
-    status, _ = api(key, '/rest/v1/enrollments', 'POST', {'course_id': course_id, 'participant_id': users['participante']['id']}, admin)
-    check(status == 409, f'no se permiten inscripciones duplicadas (HTTP {status})')
-    print('Prueba terminada. Las cuentas y los datos de prueba no se eliminan automáticamente.', flush=True)
+    run_security_tests(key, users, marker)
+
+def resume_main():
+    if not sys.stdin.isatty() or not sys.stdout.isatty():
+        raise CheckFailure('Se requiere una terminal interactiva.')
+    print('Reanudación en NEXU-TEST con identidades confirmadas; no se crean cuentas.', flush=True)
+    marker = ask('Identificador de ejecución (32 caracteres hexadecimales): ')
+    if len(marker) != 32 or any(c not in '0123456789abcdef' for c in marker):
+        raise CheckFailure('Identificador de ejecución inválido.')
+    key = getpass.getpass('Clave pública anon de NEXU-TEST: ')
+    users = {}
+    for kind in KINDS:
+        email = getpass.getpass(f'Correo de la identidad {kind}: ')
+        password = getpass.getpass(f'Contraseña actual de {kind}: ')
+        users[kind] = authenticate_existing(key, email, password, kind, marker)
+        del password, email
+        print(f'Identidad {kind} confirmada e iniciada mediante Auth.', flush=True)
+    if len({user['id'] for user in users.values()}) != len(KINDS):
+        raise CheckFailure('Las identidades deben ser distintas.')
+    print('Verifica que el bootstrap autorizado de administrador ya se haya aplicado.', flush=True)
+    if ask('Para ejecutar las pruebas de seguridad, escribe ADMIN: ') != 'ADMIN':
+        raise CheckFailure('Pruebas detenidas antes de crear relaciones de prueba.')
+    run_security_tests(key, users, marker)
 
 if __name__ == '__main__':
     try:
-        main()
+        if sys.argv[1:] == ['--reanudar']:
+            resume_main()
+        elif sys.argv[1:]:
+            raise CheckFailure('Opción desconocida.')
+        else:
+            main()
     except (CheckFailure, EOFError, KeyboardInterrupt):
         print('Prueba detenida; revisa el último resultado. Ninguna credencial se ha guardado.', file=sys.stderr, flush=True)
         sys.exit(1)

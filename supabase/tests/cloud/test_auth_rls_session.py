@@ -12,6 +12,29 @@ module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
 class SessionSafetyTests(unittest.TestCase):
+    def test_existing_confirmed_identity_can_be_authenticated_without_storing_secret(self):
+        result = {'access_token': 'session-in-memory', 'user': {'id': 'id-1', 'email_confirmed_at': 'confirmed', 'user_metadata': {'nexu_test_run': 'a' * 32, 'nexu_test_identity': 'participante'}}}
+        with patch.object(module, 'api', return_value=(200, result)):
+            user = module.authenticate_existing('public-key', 'test@example.test', 'temporary-password', 'participante', 'a' * 32)
+        self.assertEqual(user['id'], 'id-1')
+        self.assertEqual(user['token'], 'session-in-memory')
+        self.assertNotIn('password', user)
+
+    def test_existing_identity_rejects_unconfirmed_or_wrong_execution(self):
+        response = {'access_token': 'session-in-memory', 'user': {'id': 'id-1', 'email_confirmed_at': None, 'user_metadata': {'nexu_test_run': 'a' * 32, 'nexu_test_identity': 'participante'}}}
+        with patch.object(module, 'api', return_value=(200, response)), self.assertRaises(module.CheckFailure):
+            module.authenticate_existing('public-key', 'test@example.test', 'temporary-password', 'participante', 'a' * 32)
+        response['user']['email_confirmed_at'] = 'confirmed'
+        with patch.object(module, 'api', return_value=(200, response)), self.assertRaises(module.CheckFailure):
+            module.authenticate_existing('public-key', 'test@example.test', 'temporary-password', 'participante', 'b' * 32)
+
+    def test_existing_course_stops_before_mutating_test_fixtures(self):
+        users = {name: {'id': name, 'token': 'session'} for name in module.KINDS}
+        responses = [(200, [{'id': 'admin', 'role': 'administrador'}]), (200, [{'id': 'existing'}])]
+        with patch.object(module, 'api', side_effect=responses) as api, contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaises(module.CheckFailure):
+                module.run_security_tests('public-key', users, 'a' * 32)
+        self.assertEqual(api.call_count, 2)
     def test_aliases_are_unique_and_no_password_is_embedded(self):
         marker = 'a' * 32
         aliases = {module.suffix_email('prueba@example.test', marker, role) for role in module.KINDS}
