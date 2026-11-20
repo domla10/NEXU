@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { DemoCourse } from '@/lib/demo-courses';
+import type { Course } from '@/types/academic';
 
 export function Header({ role, home = false }: { role?: 'facilitador' | 'participante'; home?: boolean }) {
   return (
@@ -18,8 +18,8 @@ export function Header({ role, home = false }: { role?: 'facilitador' | 'partici
   );
 }
 
-export function CourseCard({ course, navigable = false }: { course: DemoCourse; navigable?: boolean }) {
-  const details = <><span className="course-label">CURSO PILOTO PROVISIONAL</span><h2>{course.name}</h2><p className="program">{course.program}</p><p className="institution">{course.institution} · {course.campus}</p></>;
+export function CourseCard({ course, navigable = false }: { course: Course; navigable?: boolean }) {
+  const details = <><span className="course-label">{course.isPilot ? 'CURSO PILOTO PROVISIONAL' : 'CURSO DE DEMOSTRACIÓN'}</span><h2>{course.name}</h2><p className="program">{course.program}</p><p className="institution">{course.institution} · {course.campus}</p></>;
   if (!navigable) return <article className="course">{details}</article>;
   return <Link className="course course-link" href={`/docente/cursos/${course.slug}`}><span className="course-link-icon" aria-hidden="true"><AcademicIcon /></span><div className="course-link-details">{details}</div><span className="course-link-arrow" aria-hidden="true">→</span></Link>;
 }
