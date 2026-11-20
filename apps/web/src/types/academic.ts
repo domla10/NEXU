@@ -2,9 +2,9 @@
 export type AcademicRole = 'participante' | 'facilitador';
 export type GlobalRole = 'administrador';
 export type CourseStatus = 'active' | 'inactive';
-export type UserProfile = { id: string; displayName: string; globalRoles: GlobalRole[] };
-export type Course = { id: string; slug: string; name: string; program: string; institution: string; campus: string; status: CourseStatus; isPilot: boolean };
-export type Section = { id: string; courseId: string; name: string; status: CourseStatus };
+export type UserProfile = { id: string; displayName: string; globalRoles: GlobalRole[]; demoFacilitator?: boolean };
+export type Course = { id: string; slug: string; name: string; code: string; description: string; program: string; institution: string; campus: string; status: CourseStatus; isPilot: boolean };
+export type Section = { id: string; courseId: string; name: string; code: string; status: CourseStatus };
 export type FacilitatorAssignment = { sectionId: string; userId: string };
 export type Enrollment = { sectionId: string; userId: string };
 export type GlobalPermission = 'manage_platform';

@@ -1,17 +1,17 @@
 import type { Course, Enrollment, FacilitatorAssignment, Section, UserProfile } from '../../types/academic.ts';
 
 export const users: UserProfile[] = [
-  { id: 'demo-multiple', displayName: 'Usuario de demostración', globalRoles: ['administrador'] },
-  { id: 'facilitator-02', displayName: 'Facilitador de demostración 2', globalRoles: [] },
+  { id: 'demo-multiple', displayName: 'Usuario de demostración', globalRoles: ['administrador'], demoFacilitator: true },
+  { id: 'facilitator-02', displayName: 'Facilitador de demostración 2', globalRoles: [], demoFacilitator: true },
   ...Array.from({ length: 12 }, (_, i): UserProfile => ({ id: `participant-${String(i + 1).padStart(2, '0')}`, displayName: `Participante ficticio ${i + 1}`, globalRoles: [] })),
 ];
 export const courses: Course[] = [
-  { id: 'course-physics-2', slug: 'fisica-ii', name: 'Física II', program: 'Curso piloto provisional', institution: 'UNESR', campus: 'Núcleo Araure', status: 'active', isPilot: true },
-  { id: 'course-second', slug: 'introduccion-ciencia', name: 'Introducción a la ciencia', program: 'Curso ficticio', institution: 'UNESR', campus: 'Núcleo Araure', status: 'active', isPilot: false },
+  { id: 'course-physics-2', slug: 'fisica-ii', name: 'Física II', code: 'DEMO-FIS2', description: 'Curso ficticio para el piloto.', program: 'Curso piloto provisional', institution: 'UNESR', campus: 'Núcleo Araure', status: 'active', isPilot: true },
+  { id: 'course-second', slug: 'introduccion-ciencia', name: 'Introducción a la ciencia', code: 'DEMO-CIENCIA', description: 'Curso ficticio adicional.', program: 'Curso ficticio', institution: 'UNESR', campus: 'Núcleo Araure', status: 'active', isPilot: false },
 ];
 export const sections: Section[] = [
-  { id: 'section-physics-demo', courseId: 'course-physics-2', name: 'Grupo de demostración', status: 'active' },
-  { id: 'section-second-demo', courseId: 'course-second', name: 'Grupo de demostración', status: 'active' },
+  { id: 'section-physics-demo', courseId: 'course-physics-2', name: 'Grupo de demostración', code: 'DEMO-A', status: 'active' },
+  { id: 'section-second-demo', courseId: 'course-second', name: 'Grupo de demostración', code: 'DEMO-A', status: 'active' },
 ];
 export const assignments: FacilitatorAssignment[] = [
   { sectionId: 'section-physics-demo', userId: 'demo-multiple' },
