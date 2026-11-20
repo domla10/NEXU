@@ -6,7 +6,7 @@
 
 ## Propósito
 
-Digitalizar y agilizar el registro de asistencia en clases y, en una fase posterior, facilitar la consulta y revisión oportuna de calificaciones. NEXU es un sistema **auxiliar e independiente**: **no reemplaza los sistemas oficiales de la universidad ni modifica calificaciones oficiales**.
+Digitalizar y agilizar el registro de asistencia en clases. NEXU es un sistema **auxiliar e independiente** y no reemplaza los sistemas oficiales de la universidad.
 
 ## Prioridad actual: piloto de asistencia
 
@@ -20,19 +20,10 @@ El curso propuesto provisionalmente para el piloto es **Química Orgánica**, de
 
 El QR rotativo **no elimina por completo** el fraude: deben validarse medidas complementarias durante el piloto. La asistencia QR totalmente offline tampoco está resuelta y **no debe prometerse**.
 
-## Futuro módulo de calificaciones (fuera del alcance del piloto inicial)
-
-- Unidades y evaluaciones configurables, con distintos pesos y puntos obtenidos.
-- Registro privado de calificaciones por el docente.
-- **Publicación simultánea** a la sección por evaluación o unidad, después de su revisión.
-- Vista personal para el estudiante, acumulados y solicitudes de revisión.
-- Historial de correcciones con autor, fecha y valores anterior y nuevo.
-- Aclaración visible de que las notas son informativas y no sustituyen las oficiales.
-
 ## Perfiles de usuario
 
-- **Docente:** gestiona secciones autorizadas, asistencia, reportes y, posteriormente, calificaciones.
-- **Estudiante:** registra asistencia y consulta exclusivamente sus datos autorizados.
+- **Facilitador:** gestiona cursos autorizados, asistencia y reportes.
+- **Participante:** registra asistencia y consulta exclusivamente sus datos autorizados.
 - **Administrador:** administra usuarios, permisos y organización académica dentro del alcance aprobado.
 
 ## Estructura del repositorio
@@ -42,7 +33,7 @@ NEXU/
 ├── apps/web/                # PWA: interfaz y módulos por función
 │   ├── src/app/             # Vistas y rutas (si se adopta Next.js)
 │   ├── src/components/      # Componentes comunes de interfaz
-│   ├── src/features/        # Asistencia, notas, autenticación y estructura académica
+│   ├── src/features/        # Asistencia, autenticación y estructura académica
 │   ├── src/lib/             # Utilidades e integraciones
 │   ├── src/styles/          # Estilos
 │   └── public/              # Recursos estáticos
@@ -61,7 +52,7 @@ Las carpetas están reservadas para el desarrollo. La separación `services/` no
 
 ## Tecnología por decidir
 
-Se han estudiado **Next.js**, **Supabase/PostgreSQL**, **Cloudflare Pages** o **Vercel**, así como alternativas de almacenamiento local y respaldo. **El prototipo web usa Next.js; las demás tecnologías no se consideran aprobadas ni implementadas todavía.** La conectividad entre el teléfono del alumno y el registro del docente, la estrategia offline, el alojamiento, la política de backups y las condiciones de los planes gratuitos siguen por validar.
+Se han estudiado **Next.js**, **Supabase/PostgreSQL**, **Cloudflare Pages** o **Vercel**, así como alternativas de almacenamiento local y respaldo. **El prototipo web usa Next.js; las migraciones propuestas para Supabase aún no están conectadas ni aplicadas al proyecto remoto.** Las demás decisiones siguen pendientes. La conectividad entre el teléfono del alumno y el registro del docente, la estrategia offline, el alojamiento, la política de backups y las condiciones de los planes gratuitos siguen por validar.
 
 ## Principios de diseño
 
@@ -79,7 +70,6 @@ Se han estudiado **Next.js**, **Supabase/PostgreSQL**, **Cloudflare Pages** o **
 3. Desarrollar el módulo de asistencia y el registro manual.
 4. Preparar exportaciones PDF/Excel/DOCX y respaldos.
 5. Probar en aula, registrar fallos y evaluar ahorro de tiempo y facilidad de uso.
-6. Considerar calificaciones en una fase posterior.
 
 ## Acceso y propiedad
 
@@ -107,4 +97,8 @@ Abre `http://localhost:3000`. Para comprobar la aplicación ejecuta `npm run typ
 
 Las rutas `/login`, `/register` y `/forgot-password` muestran formularios de demostración que validan la interfaz: no crean cuentas, no inician sesión y no envían correos. No se deben introducir credenciales reales. Las rutas existentes `/docente` y `/estudiante` muestran paneles públicos con datos ficticios; cambiar de vista no concede permisos. Los roles reales deberán validarse en el servidor cuando exista un backend. El curso de muestra permanece en `apps/web/src/lib/demo-courses.ts`.
 
-Los tipos de evaluaciones y escalas configurables están en `apps/web/src/types/academic.ts`. La escala de 1 a 5 es un ejemplo provisional y no convierte ni calcula notas. Las calificaciones futuras serán informativas y no sustituyen los registros oficiales. El piloto sigue sujeto a autorización institucional antes de usar datos reales.
+El piloto sigue sujeto a autorización institucional antes de usar datos reales.
+
+## Infraestructura de datos propuesta
+
+La migración versionada y las pruebas RLS están en `supabase/`. Consulta [Infraestructura de datos y seguridad](docs/infraestructura-datos.md) para el modelo, las pruebas aisladas y los pasos previos a cualquier aplicación futura. No se ha aplicado al proyecto Supabase remoto.
