@@ -1,26 +1,16 @@
 'use client';
 import { useState } from 'react';
-import { assignments, courses, enrollments, sections, users } from '@/lib/academic/demo-data';
+import { browserStore, useDemoRevision } from '@/lib/academic/browser-store';
 import { CourseManagement, type DemoState } from '@/lib/academic/course-management';
 import { DEMO_USER_ID } from '@/lib/academic/repository';
 
-const storageKey = 'nexu-demo-course-management-v1';
-function initialState(): DemoState { return structuredClone({ users, courses, sections, assignments, enrollments }); }
-function service() {
-  return new CourseManagement({
-    read() {
-      const saved = localStorage.getItem(storageKey);
-      if (!saved) return initialState();
-      const state: unknown = JSON.parse(saved);
-      if (!state || typeof state !== 'object' || !['users', 'courses', 'sections', 'assignments', 'enrollments'].every(key => Array.isArray((state as Record<string, unknown>)[key]))) throw new Error('Los datos guardados no tienen un formato válido.');
-      return state as DemoState;
-    },
-    write(state) { localStorage.setItem(storageKey, JSON.stringify(state)); },
-  });
-}
+const service = () => new CourseManagement(browserStore);
 
 export function AdminCourses() {
-  const [data, setData] = useState<DemoState | null>(null);
+  const revision = useDemoRevision();
+  let data: DemoState | null = null;
+  let readError = false;
+  if (revision !== null) { try { data = browserStore.read(); } catch { readError = true; } }
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [courseId, setCourseId] = useState('');
@@ -30,21 +20,17 @@ export function AdminCourses() {
   const [preview, setPreview] = useState<Awaited<ReturnType<CourseManagement['listForRole']>> | null>(null);
   const [course, setCourse] = useState({ name: '', code: '', description: '', status: 'active' as 'active' | 'inactive' });
   const [section, setSection] = useState({ courseId: '', name: '', code: '', facilitatorId: '', status: 'active' as 'active' | 'inactive' });
-  async function refresh() {
-    const result = await service().list(DEMO_USER_ID);
-    if (!result.ok) throw new Error(result.error);
-    setData(result.value);
-  }
   async function perform(action: () => Promise<{ ok: boolean; error?: string }>) {
     setBusy(true); setMessage('');
     try {
       const result = await action();
       if (!result.ok) { setMessage(result.error ?? 'No se pudo guardar.'); return; }
-      await refresh(); setMessage('Cambios de demostración guardados en este navegador.');
+      setMessage('Cambios de demostración guardados en este navegador.');
     } catch { setMessage('No se pudo acceder al almacenamiento de demostración.'); }
     finally { setBusy(false); }
   }
-  if (!data) return <><button className="button" onClick={() => perform(async () => { await refresh(); return { ok: true }; })} disabled={busy}>Abrir datos de demostración</button><p role="status">{message}</p></>;
+  if (readError) return <p role="alert">No se pueden leer los datos de demostración.</p>;
+  if (!data) return <p>Cargando datos de demostración…</p>;
   return <>
     <p role="status" aria-live="polite">{message}</p>
     <h2>Consultar asignaciones de demostración</h2>

@@ -1,5 +1,4 @@
-import { AttendancePage, courseParams } from '@/components/course-navigation';
-export const generateStaticParams = courseParams;
+import { AttendancePage } from '@/components/course-navigation';
 export default async function Page({ params }: { params: Promise<{ curso: string }> }) {
   const { curso } = await params;
   return <AttendancePage slug={curso} type="start"/>;
