@@ -31,7 +31,12 @@ export function AuthForm({ mode }: { mode: Mode }) {
     if (register && get('confirm') !== get('password')) next.confirm = 'Las contraseñas no coinciden.';
     setErrors(next);
     setMessage('');
-    if (Object.keys(next).length) return;
+    const firstError = Object.keys(next)[0];
+    if (firstError) {
+      const field = form.elements.namedItem(firstError);
+      if (field instanceof HTMLInputElement) field.focus();
+      return;
+    }
     form.reset();
     setMessage('Validación de demostración completada. No se inició sesión, creó una cuenta ni envió ningún correo.');
   }
