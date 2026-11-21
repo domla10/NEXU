@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { SessionPanel } from '@/features/attendance/session-panel';
 import { Header } from '@/components/ui';
 import { browserStore, useDemoRevision } from '@/lib/academic/browser-store';
 import { DEMO_USER_ID } from '@/lib/academic/repository';
@@ -34,5 +35,5 @@ export function AttendancePage({ slug, type }: { slug: string; type: 'start' | '
   if (loading) return <p>Cargando curso de demostración…</p>;
   if (!course) return <main className="content"><p>Curso no disponible para este facilitador de demostración.</p><Link href="/docente">Volver a mis cursos</Link></main>;
   const history = type === 'history';
-  return <><Header role="facilitador"/><main className="content course-content"><Link className="back-link" href={`/docente/cursos/${course.slug}?usuario=${encodeURIComponent(actor)}`}>← <span>{course.name}</span></Link><p className="eyebrow">{course.name.toUpperCase()} · DEMOSTRACIÓN</p><h1>{history ? 'Historial de asistencia' : 'Iniciar asistencia'}</h1><section className="attendance-empty"><span className="empty-icon"><CourseIcon name={history ? 'history' : 'qr'}/></span><h2>{history ? 'Sin sesiones registradas' : 'Generación de QR no disponible'}</h2><p>{history ? 'El historial de sesiones estará disponible cuando se implemente la asistencia.' : 'La generación de códigos QR para la clase estará disponible próximamente.'}</p></section><p className="disclaimer">Vista de demostración. No se registran asistencias reales.</p></main></>;
+  return <><Header role="facilitador"/><main className="content course-content"><Link className="back-link" href={`/docente/cursos/${course.slug}?usuario=${encodeURIComponent(actor)}`}>← <span>{course.name}</span></Link><p className="eyebrow">{course.name.toUpperCase()} · DEMOSTRACIÓN</p><h1>{history ? 'Historial de asistencia' : 'Iniciar asistencia'}</h1>{!history && <SessionPanel courseId={course.id} actor={actor}/>}<section className="attendance-empty"><span className="empty-icon"><CourseIcon name={history ? 'history' : 'qr'}/></span><h2>{history ? 'Historial académico completo pendiente' : 'Asistencia local de demostración'}</h2><p>{history ? 'El historial de sesiones estará disponible cuando se implemente la asistencia.' : 'El registro funciona solo dentro de este navegador.'}</p></section><p className="disclaimer">Vista de demostración. Los registros son ficticios y locales.</p></main></>;
 }
