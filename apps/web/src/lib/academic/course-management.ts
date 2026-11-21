@@ -2,7 +2,7 @@ import type { Course, Section, UserProfile, FacilitatorAssignment, Enrollment } 
 
 export type CourseData = { name: string; code: string; description: string; status: 'active' | 'inactive'; facilitatorId?: string };
 export type SectionData = { courseId: string; name: string; code: string; facilitatorId: string; status: 'active' | 'inactive' };
-export type DemoState = { courses: Course[]; sections: Section[]; assignments: FacilitatorAssignment[]; enrollments: Enrollment[]; users: UserProfile[]; requests?: EnrollmentRequest[] };
+export type DemoState = { catalogVersion?: number; courses: Course[]; sections: Section[]; assignments: FacilitatorAssignment[]; enrollments: Enrollment[]; users: UserProfile[]; requests?: EnrollmentRequest[] };
 export type EnrollmentRequest = { id: string; participantId: string; courseId: string; sectionId: string; facilitatorId: string; createdAt: string; status: 'pendiente' | 'aprobada' | 'rechazada' | 'cancelada'; resolvedAt?: string; resolvedBy?: string; origin: 'catalogo' | 'qr' };
 export type Result<T> = { ok: true; value: T } | { ok: false; error: string };
 export interface StateStore { read(): DemoState; write(state: DemoState): void }

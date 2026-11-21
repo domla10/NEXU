@@ -35,7 +35,7 @@ test('un mismo usuario tiene roles distintos limitados al curso', async () => {
 
 test('los repositorios filtran cursos para cada contexto y no exponen referencias mutables', async () => {
   assert.deepEqual((await demoRepository.listCoursesForUser(DEMO_USER_ID, 'facilitador')).map(c => c.name), ['Física II']);
-  assert.deepEqual((await demoRepository.listCoursesForUser(DEMO_USER_ID, 'participante')).map(c => c.name), ['Física II', 'Introducción a la ciencia']);
+  assert.deepEqual((await demoRepository.listCoursesForUser(DEMO_USER_ID, 'participante')).map(c => c.name), ['Física II', 'Idioma Moderno']);
   assert.deepEqual((await demoRepository.listCoursesForUser('participant-01', 'participante')).map(c => c.name), ['Física II']);
   assert.deepEqual(await demoRepository.listCoursesForUser('inexistente', 'participante'), []);
   const result = await demoRepository.listCoursesForUser(DEMO_USER_ID, 'facilitador');
