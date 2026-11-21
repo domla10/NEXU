@@ -9,7 +9,6 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }
       const page = await browser.newPage({ viewport }); page.on('dialog', dialog => dialog.accept());
       const errors = []; page.on('pageerror', error => errors.push(error.message));
       await page.goto(`${base}/docente/cursos/fisica-ii/asistencia`);
-      await page.locator('#attendance-section').selectOption('section-physics-demo');
       await page.getByRole('button', { name: 'Crear sesión' }).click();
       await page.getByRole('button', { name: 'Iniciar sesión de asistencia' }).click();
       await page.getByRole('button', { name: 'Mostrar QR' }).click();
