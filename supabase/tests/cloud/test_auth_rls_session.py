@@ -12,6 +12,19 @@ module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
 class SessionSafetyTests(unittest.TestCase):
+    def test_registration_rejects_existing_participant_before_network(self):
+        with patch.object(module, 'api') as api, self.assertRaises(module.CheckFailure):
+            module.register_persistent('participante')
+        api.assert_not_called()
+
+    def test_registration_rejects_short_password_before_network(self):
+        env = {'NEXU_TEST_ANON_KEY': 'public', 'NEXU_TEST_ADMIN_EMAIL': 'admin@example.test',
+               'NEXU_TEST_ADMIN_PASSWORD': '12345678'}
+        with patch.dict('os.environ', env, clear=True), patch.object(module.sys.stdin, 'isatty', return_value=True), patch.object(module, 'api') as api:
+            with self.assertRaises(module.CheckFailure):
+                module.register_persistent('admin')
+            api.assert_not_called()
+
     def test_persistent_missing_secrets_stops_before_network(self):
         with patch.dict('os.environ', {}, clear=True), patch.object(module, 'api') as api:
             with self.assertRaises(module.CheckFailure):

@@ -125,6 +125,32 @@ def persistent_authenticate():
     return users
 
 
+def register_persistent(kind):
+    if kind not in ('admin', 'facilitador'):
+        raise CheckFailure('Solo se pueden registrar las identidades pendientes verificadas.')
+    if not sys.stdin.isatty():
+        raise CheckFailure('Se requiere terminal interactiva.')
+    key = os.environ.get('NEXU_TEST_ANON_KEY', '')
+    email = os.environ.get(f'NEXU_TEST_{kind.upper()}_EMAIL', '').strip()
+    password = os.environ.get(f'NEXU_TEST_{kind.upper()}_PASSWORD', '')
+    if not key or not email or len(password) < 16:
+        raise CheckFailure('Faltan variables o la contraseña tiene menos de 16 caracteres.')
+    if ask(f'Tras verificar que {kind} no existe en NEXU-TEST, escribe REGISTRAR: ') != 'REGISTRAR':
+        raise CheckFailure('Registro cancelado.')
+    status, response = api(key, '/auth/v1/signup', 'POST', {'email': email, 'password': password})
+    if status == 429:
+        print(f'Supabase limita los envíos. Espera al menos {retry_remaining()} segundos antes de otro intento.', flush=True)
+        raise CheckFailure('Registro limitado por Supabase.')
+    user = (response or {}).get('user') or (response or {})
+    if status not in (200, 201) or not isinstance(user, dict) or not user.get('id'):
+        raise CheckFailure(f'Auth no aceptó el registro (HTTP {status}).')
+    if not user.get('identities'):
+        raise CheckFailure('Auth no confirmó una identidad nueva; revisa cuentas existentes antes de repetir.')
+    if user.get('email_confirmed_at') or (response or {}).get('access_token'):
+        raise CheckFailure('La cuenta no requiere confirmación; revisar configuración de Auth.')
+    print(f'Registro {kind} aceptado. Confirma el correo recibido.', flush=True)
+
+
 def persistent_main(run_fixtures=False):
     users = persistent_authenticate()
     print('Las tres identidades confirmadas iniciaron sesión en NEXU-TEST.', flush=True)
@@ -298,7 +324,9 @@ def resume_main():
 
 if __name__ == '__main__':
     try:
-        if sys.argv[1:] == ['--persistentes']:
+        if len(sys.argv) == 3 and sys.argv[1] == '--registrar-persistente':
+            register_persistent(sys.argv[2])
+        elif sys.argv[1:] == ['--persistentes']:
             persistent_main()
         elif sys.argv[1:] == ['--persistentes-con-fixtures']:
             persistent_main(run_fixtures=True)
