@@ -7,9 +7,14 @@ export const users: UserProfile[] = [
   { id: 'facilitator-02', displayName: 'Facilitador de demostración 2', globalRoles: [], demoFacilitator: true },
   ...Array.from({ length: 12 }, (_, i): UserProfile => ({ id: `participant-${String(i + 1).padStart(2, '0')}`, displayName: `Participante ficticio ${i + 1}`, globalRoles: [], demoParticipant: true })),
 ];
+export const modernLanguageCourse: Course = {
+  id: 'course-second', slug: 'idioma-moderno', name: 'Idioma Moderno', code: 'DEMO-IDIOMA',
+  description: 'Curso ficticio adicional.', program: 'Curso ficticio', institution: 'UNESR',
+  campus: 'Núcleo Araure', status: 'active', isPilot: false,
+};
 export const courses: Course[] = [
   { id: 'course-physics-2', slug: 'fisica-ii', name: 'Física II', code: 'DEMO-FIS2', description: 'Curso ficticio para el piloto.', program: 'Curso piloto provisional', institution: 'UNESR', campus: 'Núcleo Araure', status: 'active', isPilot: true },
-  { id: 'course-second', slug: 'introduccion-ciencia', name: 'Introducción a la ciencia', code: 'DEMO-CIENCIA', description: 'Curso ficticio adicional.', program: 'Curso ficticio', institution: 'UNESR', campus: 'Núcleo Araure', status: 'active', isPilot: false },
+  modernLanguageCourse,
 ];
 export const sections: Section[] = [
   { id: 'section-physics-demo', courseId: 'course-physics-2', name: 'Grupo de demostración', code: 'DEMO-A', status: 'active' },
