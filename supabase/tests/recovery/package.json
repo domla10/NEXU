@@ -1,0 +1,1 @@
+{"name":"nexu-test-recovery-tests","private":true,"version":"1.0.0","dependencies":{"@supabase/supabase-js":"2.119.2"},"scripts":{"test":"node test.js && node test-sdk.js","vendor":"node -e \"require('fs').copyFileSync('node_modules/@supabase/supabase-js/dist/umd/supabase.js','../../recovery-test/supabase.js')\""}}
