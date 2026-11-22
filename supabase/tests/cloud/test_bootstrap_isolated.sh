@@ -15,7 +15,7 @@ for n in $(seq 1 30); do
 done
 [ "$ready" -eq 1 ] || { echo 'PostgreSQL no se inició' >&2; exit 1; }
 docker exec -i "$name" psql -q -v ON_ERROR_STOP=1 -U postgres -d postgres < "$root/supabase/tests/support/auth_stub.sql"
-docker exec -i "$name" psql -q -v ON_ERROR_STOP=1 -U postgres -d postgres < "$root/supabase/migrations/20261114000000_data_foundation.sql"
+docker exec -i "$name" psql -q -v ON_ERROR_STOP=1 -U postgres -d postgres < "$root/supabase/migrations/20261114230539_data_foundation.sql"
 docker exec -i "$name" psql -q -v ON_ERROR_STOP=1 -U postgres -d postgres <<'SQL'
 insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values
 ('50000000-0000-0000-0000-000000000001','p1@example.test',now(),'{"nexu_test_run":"0123456789abcdef0123456789abcdef","nexu_test_identity":"admin"}'),

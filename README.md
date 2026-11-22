@@ -52,7 +52,7 @@ Las carpetas están reservadas para el desarrollo. La separación `services/` no
 
 ## Tecnología por decidir
 
-Se han estudiado **Next.js**, **Supabase/PostgreSQL**, **Cloudflare Pages** o **Vercel**, así como alternativas de almacenamiento local y respaldo. **El prototipo web usa Next.js; las migraciones propuestas para Supabase aún no están conectadas ni aplicadas al proyecto remoto.** Las demás decisiones siguen pendientes. La conectividad entre el teléfono del alumno y el registro del docente, la estrategia offline, el alojamiento, la política de backups y las condiciones de los planes gratuitos siguen por validar.
+Se han estudiado **Next.js**, **Supabase/PostgreSQL**, **Cloudflare Pages** o **Vercel**, así como alternativas de almacenamiento local y respaldo. **El prototipo web usa Next.js; las migraciones de Supabase no están conectadas al frontend y solo se han aplicado al proyecto remoto de pruebas NEXU-TEST.** Las demás decisiones siguen pendientes. La conectividad entre el teléfono del alumno y el registro del docente, la estrategia offline, el alojamiento, la política de backups y las condiciones de los planes gratuitos siguen por validar.
 
 ## Principios de diseño
 
@@ -101,4 +101,6 @@ El piloto sigue sujeto a autorización institucional antes de usar datos reales.
 
 ## Infraestructura de datos propuesta
 
-La migración versionada y las pruebas RLS están en `supabase/`. Consulta [Infraestructura de datos y seguridad](docs/infraestructura-datos.md) para el modelo, las pruebas aisladas y los pasos previos a cualquier aplicación futura. No se ha aplicado al proyecto Supabase remoto.
+La migración versionada y las pruebas RLS están en `supabase/`. Consulta [Infraestructura de datos y seguridad](docs/infraestructura-datos.md) para el modelo, las pruebas aisladas y los pasos previos a cualquier aplicación futura. No se ha aplicado al proyecto Supabase principal.
+
+El modelo de autorización por curso y administración independiente se describe en [Modelo multirrol y autorización](docs/modelo-multirrol.md). Las migraciones se han aplicado únicamente a NEXU-TEST; antes de usarlas en otra base hay que revisar su historial.

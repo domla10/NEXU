@@ -1,3 +1,5 @@
+> **Actualización multirrol:** Las descripciones históricas de rol exclusivo y RPC privilegiada de este documento quedan sustituidas por [Modelo multirrol y autorización](modelo-multirrol.md). El resto se conserva como registro histórico.
+
 # Plan de validación con Supabase Cloud
 
 Estado: **preparado; no ejecutado en Supabase Cloud**. El PR #4 solo se ha probado en PostgreSQL aislado con Auth simulado. Este plan no autoriza por sí mismo la creación de proyectos, la aplicación de migraciones, el envío de correos ni la creación de usuarios o registros.
@@ -17,7 +19,7 @@ Comprobar además en la configuración del proyecto que el esquema `nexu_private
 
 ## Tras la autorización: migración y sesiones reales
 
-- Aplicar exactamente la migración versionada `supabase/migrations/20261114000000_data_foundation.sql` como migración identificable, una sola vez y solo si la inspección no mostró colisiones. Guardar el resultado sin incluir secretos. Si falla, registrar el error y detenerse; no reparar manualmente la base con SQL ad hoc. Cualquier corrección debe versionarse y repetirse en un entorno limpio autorizado.
+- Aplicar exactamente la migración versionada `supabase/migrations/20261114230539_data_foundation.sql` como migración identificable, una sola vez y solo si la inspección no mostró colisiones. Guardar el resultado sin incluir secretos. Si falla, registrar el error y detenerse; no reparar manualmente la base con SQL ad hoc. Cualquier corrección debe versionarse y repetirse en un entorno limpio autorizado.
 - Usar un proveedor de correo de pruebas controlado para confirmar direcciones creadas exclusivamente para esta prueba. Las direcciones reservadas como `example.test` son ficticias pero no reciben correo real; no deben presentarse como prueba de envío ni de confirmación. Mantener las contraseñas y sesiones en la herramienta de pruebas, fuera del repositorio y sin imprimirlas. No utilizar cuentas universitarias reales.
 - Los preparativos de roles, cursos e inscripciones de prueba deben ser reproducibles y autorizados: utilizar fixtures versionados específicos para `NEXU-TEST` y registrar exactamente lo creado. El primer administrador requiere el procedimiento controlado documentado en `infraestructura-datos.md`; no debe derivarse de metadatos de registro. No borrar usuarios o datos sin autorización explícita.
 - Ejecutar la matriz siguiente a través de Auth y PostgREST con sesiones reales de prueba; registrar estado HTTP, operación y resultado esperado/observado, sin guardar tokens ni cuerpos con datos personales. Repetir las pruebas afectadas después de cualquier corrección.

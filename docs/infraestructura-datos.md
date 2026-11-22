@@ -1,3 +1,5 @@
+> **Actualización multirrol:** Las descripciones históricas de rol exclusivo y RPC privilegiada de este documento quedan sustituidas por [Modelo multirrol y autorización](modelo-multirrol.md). El resto se conserva como registro histórico.
+
 # Base de datos y seguridad de NEXU
 
 La infraestructura versionada es una propuesta inicial para Supabase/PostgreSQL. No conecta la interfaz, no crea el curso piloto y no se ha aplicado al proyecto remoto. La migración está en `supabase/migrations/` y sus pruebas en `supabase/tests/`. Las carpetas históricas `database/` se conservan; las migraciones ejecutables de Supabase viven únicamente en `supabase/migrations/`.

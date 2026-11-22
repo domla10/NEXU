@@ -15,7 +15,9 @@ for attempt in $(seq 1 30); do
 done
 if [ "$ready" -ne 1 ]; then echo 'PostgreSQL no se inició.' >&2; exit 1; fi
 docker exec -i "$name" psql -q -v ON_ERROR_STOP=1 -U postgres -d postgres < "$root/supabase/tests/support/auth_stub.sql"
-docker exec -i "$name" psql -q -v ON_ERROR_STOP=1 -U postgres -d postgres < "$root/supabase/migrations/20261114000000_data_foundation.sql"
+docker exec -i "$name" psql -q -v ON_ERROR_STOP=1 -U postgres -d postgres < "$root/supabase/migrations/20261114230539_data_foundation.sql"
 docker exec -i "$name" psql -q -v ON_ERROR_STOP=1 -U postgres -d postgres < "$root/supabase/tests/rls_foundation.sql"
 
 "$root/supabase/tests/concurrency.sh" "$name"
+docker exec -i "$name" psql -q -v ON_ERROR_STOP=1 -U postgres -d postgres < "$root/supabase/migrations/20261122145735_multirole_authorization.sql"
+docker exec -i "$name" psql -q -v ON_ERROR_STOP=1 -U postgres -d postgres < "$root/supabase/tests/rls_multirole.sql"
