@@ -25,5 +25,15 @@
         }
       ]
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/nexu-test-recovery",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/nexu-test-recovery/",
+      "destination": "/index.html"
+    }
   ]
 }

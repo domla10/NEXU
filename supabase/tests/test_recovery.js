@@ -4,6 +4,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const script = fs.readFileSync(path.join(__dirname, '../recovery-test/recovery.js'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, '../recovery-test/index.html'), 'utf8');
+const config = JSON.parse(fs.readFileSync(path.join(__dirname, '../recovery-test/vercel.json'), 'utf8'));
+assert.equal(html.includes('id=\"key\"'), false);
+assert.match(html, /src=\"\/recovery\.js\"/);
+assert(config.rewrites.some(rule => rule.source === '/nexu-test-recovery/' && rule.destination === '/index.html'));
 
 function page(hash, secure = true, responseOk = true) {
   const requests = [];
