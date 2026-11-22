@@ -22,7 +22,7 @@ El QR rotativo **no elimina por completo** el fraude: deben validarse medidas co
 
 ## Perfiles de usuario
 
-- **Facilitador:** gestiona cursos autorizados, asistencia y reportes.
+- **Facilitador:** consulta sus materias y participantes. Cuando existan esas funciones, podrá resolver solicitudes de inscripción y gestionar sesiones de asistencia de sus materias.
 - **Participante:** registra asistencia y consulta exclusivamente sus datos autorizados.
 - **Administrador:** administra usuarios, permisos y organización académica dentro del alcance aprobado.
 

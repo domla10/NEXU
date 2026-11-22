@@ -15,3 +15,9 @@ La migración original tiene ahora la versión `20261114230539`, coincidente con
 `supabase/tests/rls_multirole.sql` es transaccional y revierte sus identidades ficticias. Cubre simultaneidad de contextos, administración con inscripción, lectura ajena y escalada por SQL y RPC. `supabase/tests/concurrency_multirole.py` usa conexiones simultáneas y comprueba los dos órdenes de revocación; solo se ejecuta contra una base desechable, nunca contra una base con datos reales. Usa las variables habituales `PGHOST`, `PGPORT` y `PGUSER`, y admite `NEXU_TEST_PSQL` para elegir el ejecutable. La suite local Docker ejecuta la base histórica antes de la migración multirrol y luego las pruebas de la nueva versión.
 
 La prueba SQL en NEXU-TEST simula identidades con `SET ROLE` y `request.jwt.claim.sub`; no sustituye sesiones reales de Auth ni una prueba de PostgREST. La protección contra contraseñas filtradas sigue desactivada. La auditoría no es inmutable para el propietario de la base y no registra intentos rechazados. Se necesitan sesiones reales, una revisión independiente de seguridad y una política operativa de bootstrap y revocación antes del piloto.
+
+## Criterios de aceptación del facilitador
+
+- Puede consultar sus materias asignadas y sus participantes inscritos.
+- Las futuras solicitudes de inscripción y sesiones de asistencia requerirán comprobar la asignación vigente al curso en cada operación. Solo podrá aprobar o rechazar solicitudes y gestionar sesiones de sus propias materias. Estas funcionalidades están pendientes.
+- No puede crear ni eliminar materias, modificar su configuración institucional, asignar facilitadores ni otorgar administración. Estas operaciones corresponden al administrador. No se concede UPDATE general sobre courses al facilitador.

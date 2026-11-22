@@ -142,6 +142,22 @@ def run_security_tests(key, users, marker):
     check(status == 403 and isinstance(error, dict) and error.get('code') == '42501', f'facilitador no puede asignarse cursos (HTTP {status})')
     status, _ = api(key, '/rest/v1/enrollments', 'POST', {'course_id': course_id, 'participant_id': users['participante']['id']}, admin)
     check(status == 409, f'no se permiten inscripciones duplicadas (HTTP {status})')
+    # Mismo JWT para comprobar simultaneidad y revocación efectiva en base de datos.
+    status, _ = api(key, '/rest/v1/enrollments', 'POST', {'course_id': other_course_id, 'participant_id': users['facilitador']['id']}, admin)
+    check(status in (200, 201, 204), 'facilitador inscrito en otro curso')
+    status, rows = api(key, '/rest/v1/courses?select=id', token=facilitator)
+    check(status == 200 and {x.get('id') for x in (rows or [])} == {course_id, other_course_id}, 'sesión multirrol ve ambos cursos')
+    path = '/rest/v1/course_facilitators?course_id=eq.' + course_id + '&facilitator_id=eq.' + users['facilitador']['id']
+    status, deleted = api(key, path, 'DELETE', token=admin, prefer='return=representation')
+    check(status == 200 and isinstance(deleted, list) and len(deleted) == 1, 'administrador revoca asignación')
+    status, rows = api(key, '/rest/v1/courses?select=id', token=facilitator)
+    check(status == 200 and {x.get('id') for x in (rows or [])} == {other_course_id}, 'mismo JWT pierde acceso al curso revocado y conserva inscripción')
+    status, _ = api(key, '/rest/v1/rpc/set_profile_role', 'POST', {'target_id': users['facilitador']['id'], 'new_role': 'administrador'}, admin)
+    check(200 <= status < 300, 'administrador concede administración temporal')
+    status, _ = api(key, '/rest/v1/rpc/set_profile_role', 'POST', {'target_id': users['facilitador']['id'], 'new_role': 'participante'}, admin)
+    check(200 <= status < 300, 'administrador revoca administración temporal')
+    status, error = api(key, '/rest/v1/courses', 'POST', {'name': 'No autorizado ' + marker[:8]}, facilitator)
+    check(status == 403 and isinstance(error, dict) and error.get('code') == '42501', 'mismo JWT no administra tras revocación')
     print('Prueba terminada. Las cuentas y los datos de prueba no se eliminan automáticamente.', flush=True)
 
 
