@@ -21,3 +21,5 @@ docker exec -i "$name" psql -q -v ON_ERROR_STOP=1 -U postgres -d postgres < "$ro
 "$root/supabase/tests/concurrency.sh" "$name"
 docker exec -i "$name" psql -q -v ON_ERROR_STOP=1 -U postgres -d postgres < "$root/supabase/migrations/20261122145735_multirole_authorization.sql"
 docker exec -i "$name" psql -q -v ON_ERROR_STOP=1 -U postgres -d postgres < "$root/supabase/tests/rls_multirole.sql"
+
+python3 "$root/supabase/tests/concurrency_multirole.py"

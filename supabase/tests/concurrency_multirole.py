@@ -1,75 +1,93 @@
 #!/usr/bin/env python3
-"""Solo para PostgreSQL desechable ya migrado; usa las variables PG* de libpq."""
+"""Ejecuta carreras en un clúster PostgreSQL creado y destruido por este proceso."""
 import os
+from pathlib import Path
+import shutil
 import subprocess
+import tempfile
 import time
+import uuid
 
-PSQL = os.environ.get('NEXU_TEST_PSQL', 'psql')
-ADMIN = '92000000-0000-0000-0000-000000000001'
-ACTOR = '92000000-0000-0000-0000-000000000002'
+ROOT = Path(__file__).resolve().parents[2]
+BIN = Path(os.environ.get('NEXU_POSTGRES_BIN', '/usr/lib/postgresql/17/bin')).resolve()
+ENV = {key: value for key, value in os.environ.items() if not key.upper().startswith('PG')}
 
-def run(sql, **kw):
-    return subprocess.run([PSQL, '-X', '-q', '-v', 'ON_ERROR_STOP=1', '-d', 'postgres'],
-                          input=sql, text=True, capture_output=True, **kw)
 
-def checked(sql):
-    result = run(sql)
-    if result.returncode:
-        raise RuntimeError(result.stderr)
-    return result.stdout
+def command(args, **kwargs):
+    return subprocess.run(args, env=ENV, text=True, check=True, capture_output=True, **kwargs)
 
-def start(name, sql):
-    env = dict(os.environ, PGAPPNAME=name)
-    p = subprocess.Popen([PSQL, '-X', '-q', '-v', 'ON_ERROR_STOP=1', '-d', 'postgres'],
-                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         text=True, env=env)
-    p.stdin.write(sql)
-    p.stdin.close()
-    for _ in range(100):
-        state = checked("select count(*) from pg_stat_activity where application_name='" + name + "' and wait_event='PgSleep';")
-        if '\n     1\n' in state:
-            return p
-        if p.poll() is not None:
-            raise RuntimeError('Sesión concurrente terminó antes de sincronizar: ' + p.stderr.read())
-        time.sleep(.05)
-    p.kill()
-    raise RuntimeError('No se sincronizó la sesión concurrente')
 
-def finish(p):
-    p.wait(timeout=15)
-    err = p.stderr.read()
-    if p.returncode:
-        raise RuntimeError(err)
+def main():
+    for binary in ('initdb', 'pg_ctl', 'psql'):
+        if not (BIN / binary).is_file():
+            raise RuntimeError(f'Falta {BIN / binary}; configura NEXU_POSTGRES_BIN')
+    with tempfile.TemporaryDirectory(prefix='nexu-concurrency-') as directory:
+        socket = Path(directory)
+        data = socket / 'data'
+        command([str(BIN / 'initdb'), '-D', str(data), '-A', 'trust', '--no-locale'])
+        port = '55439'
+        command([str(BIN / 'pg_ctl'), '-D', str(data), '-l', str(socket / 'server.log'),
+                 '-o', f"-k {socket} -p {port} -c listen_addresses=''", 'start'])
+        psql = [str(BIN / 'psql'), '-X', '-q', '-A', '-t', '-v', 'ON_ERROR_STOP=1',
+                '-h', str(socket), '-p', port, '-d', 'postgres']
 
-checked(f"""
-insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values
-('{ADMIN}','nexu-race-admin@example.test',now(),'{{}}'),
-('{ACTOR}','nexu-race-actor@example.test',now(),'{{}}');
-update public.profiles set role='administrador' where id in ('{ADMIN}','{ACTOR}');
-""")
-try:
-    # La escritura ya autorizada mantiene el bloqueo hasta terminar.
-    p = start('nexu_write_first', f"""begin; set local role authenticated;
-      select set_config('request.jwt.claim.sub','{ACTOR}',true);
-      insert into public.courses(name) values ('race write first');
-      select pg_sleep(3); commit;""")
-    checked(f"""begin; set local role authenticated;
-      select set_config('request.jwt.claim.sub','{ADMIN}',true);
-      select public.set_profile_role('{ACTOR}','participante'); commit;""")
-    finish(p)
-    checked(f"update public.profiles set role='administrador' where id='{ACTOR}'")
-    # La revocación obtiene primero el bloqueo; al esperar, la escritura debe denegarse.
-    p = start('nexu_revoke_first', f"""begin; set local role authenticated;
-      select set_config('request.jwt.claim.sub','{ADMIN}',true);
-      select public.set_profile_role('{ACTOR}','participante');
-      select pg_sleep(3); commit;""")
-    denied = run(f"""begin; set local role authenticated;
-      select set_config('request.jwt.claim.sub','{ACTOR}',true);
-      insert into public.courses(name) values ('race unauthorized'); commit;""")
-    finish(p)
-    if denied.returncode == 0 or 'row-level security' not in denied.stderr:
-        raise RuntimeError('La escritura tras revocación no fue rechazada: ' + denied.stderr)
-    checked("do $$ begin if exists (select from public.courses where name='race unauthorized') then raise exception 'escritura indebida'; end if; end $$;")
-    print('Concurrencia: operación y revocación serializadas en ambos órdenes.')
-finally:
-    checked(f"delete from public.courses where name in ('race write first','race unauthorized'); delete from auth.users where id in ('{ADMIN}','{ACTOR}');")
+        def run(sql, name='nexu_check', check=True):
+            env = dict(ENV, PGAPPNAME=name)
+            return subprocess.run(psql, input=sql, env=env, text=True, capture_output=True, check=check)
+
+        def start(sql, name):
+            env = dict(ENV, PGAPPNAME=name)
+            proc = subprocess.Popen(psql, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE, env=env, text=True)
+            proc.stdin.write(sql)
+            proc.stdin.close()
+            return proc
+
+        def wait_for(predicate, processes):
+            deadline = time.monotonic() + 10
+            while time.monotonic() < deadline:
+                if any(p.poll() is not None for p in processes):
+                    raise RuntimeError('Una transacción terminó antes de observar el bloqueo')
+                if run(predicate).stdout.strip() == 't':
+                    return
+                time.sleep(.05)
+            raise RuntimeError('No se observó el bloqueo esperado')
+
+        def finish(proc, succeeds):
+            proc.wait(timeout=15)
+            error = proc.stderr.read()
+            if (proc.returncode == 0) != succeeds:
+                raise RuntimeError(error or 'Resultado inesperado de transacción')
+            return error
+
+        try:
+            files = ['supabase/tests/support/auth_stub.sql',
+                     'supabase/migrations/20261114230539_data_foundation.sql',
+                     'supabase/migrations/20261122145735_multirole_authorization.sql']
+            for file in files:
+                command(psql + ['-f', str(ROOT / file)])
+            admin, actor = str(uuid.uuid4()), str(uuid.uuid4())
+            run(f"insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values ('{admin}','a@example.test',now(),'{{}}'),('{actor}','b@example.test',now(),'{{}}'); update public.profiles set role='administrador' where id in ('{admin}','{actor}');")
+            auth_actor = f"set local role authenticated; select set_config('request.jwt.claim.sub','{actor}',true);"
+            auth_admin = f"set local role authenticated; select set_config('request.jwt.claim.sub','{admin}',true);"
+            revoke = f"select public.set_profile_role('{actor}','participante');"
+            for write_first in (True, False):
+                if not write_first:
+                    run(f"update public.profiles set role='administrador' where id='{actor}';")
+                first_sql = auth_actor + "insert into public.courses(name) values ('primero');" if write_first else auth_admin + revoke
+                second_sql = auth_admin + revoke if write_first else auth_actor + "insert into public.courses(name) values ('segundo');"
+                first = start('begin; ' + first_sql + 'select pg_sleep(6); commit;', 'nexu_first')
+                wait_for("select exists(select 1 from pg_stat_activity where application_name='nexu_first' and wait_event='PgSleep');", [first])
+                second = start('begin; ' + second_sql + 'commit;', 'nexu_second')
+                wait_for("select exists(select 1 from pg_stat_activity a join pg_stat_activity b on b.pid=any(pg_blocking_pids(a.pid)) where a.application_name='nexu_second' and b.application_name='nexu_first');", [first, second])
+                finish(first, True)
+                error = finish(second, write_first)
+                if not write_first and 'row-level security' not in error:
+                    raise RuntimeError('La escritura posterior no fue rechazada por RLS')
+            print('Concurrencia: ambos bloqueos y órdenes verificados en clúster desechable.')
+        finally:
+            command([str(BIN / 'pg_ctl'), '-D', str(data), 'stop', '-m', 'fast'])
+
+
+if __name__ == '__main__':
+    main()
