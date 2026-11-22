@@ -13,6 +13,7 @@ const config={auth:{flowType:'pkce',detectSessionInUrl:false,persistSession:true
 (async()=>{
  const first=createClient('https://hwckbmhfbsrwqohhmrom.supabase.co','public-test-key',config);
  let result=await first.auth.resetPasswordForEmail('fixture@example.test',{redirectTo:'https://nexu-test-recovery.vercel.app/nexu-test-recovery/'});assert.equal(result.error,null);
+ assert.equal(new URL(requests[0].url).searchParams.get('redirect_to'),'https://nexu-test-recovery.vercel.app/nexu-test-recovery/');
  const recover=JSON.parse(requests[0].options.body);assert.ok(recover.code_challenge);assert.equal(recover.code_challenge_method,'s256');
  assert.ok([...persistent.keys()].every(key=>key.endsWith('-code-verifier')));assert.ok(persistent.size>0);
  const second=createClient('https://hwckbmhfbsrwqohhmrom.supabase.co','public-test-key',config);let seen='';second.auth.onAuthStateChange(e=>{if(e==='PASSWORD_RECOVERY') seen=e});
