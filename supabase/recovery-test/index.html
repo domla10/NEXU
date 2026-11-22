@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://hwckbmhfbsrwqohhmrom.supabase.co; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+<title>Recuperar acceso de NEXU-TEST</title>
+</head>
+<body>
+<main>
+<h1>Recuperar acceso de NEXU-TEST</h1>
+<p id="status" role="status">Comprobando el enlace de recuperación…</p>
+<form id="form" hidden>
+<label>Clave pública anon de NEXU-TEST <input id="key" required autocomplete="off"></label>
+<label>Nueva contraseña <input id="password" type="password" required minlength="16" autocomplete="new-password"></label>
+<label>Confirmar contraseña <input id="confirmation" type="password" required minlength="16" autocomplete="new-password"></label>
+<button type="submit">Guardar contraseña</button>
+</form>
+</main>
+<script src="recovery.js" defer></script>
+</body>
+</html>
