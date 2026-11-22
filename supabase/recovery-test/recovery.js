@@ -52,9 +52,19 @@ if (!window.isSecureContext) {
       if (error) throw error;
       start.hidden = true;
       status.textContent = 'Si la cuenta existe, revisa el correo y abre el enlace en este mismo navegador.';
-    } catch {
-      status.textContent = 'No se pudo solicitar la recuperación. Espera antes de volver a intentarlo.';
-      button.disabled = false;
+    } catch (error) {
+      if (error?.code === 'over_email_send_rate_limit') {
+        status.textContent = 'Supabase ha alcanzado un límite de envío de correos. No se envió esta solicitud; espera antes de volver a intentarlo.';
+        // Do not encourage repeated requests when no retry time is available.
+      } else if (error?.status === 429) {
+        status.textContent = 'Supabase ha alcanzado un límite de solicitudes. Espera antes de volver a intentarlo.';
+      } else if (typeof error?.status === 'number' && error.status >= 400) {
+        status.textContent = 'El servidor no aceptó la solicitud. Revisa la configuración de NEXU-TEST antes de intentarlo de nuevo.';
+        button.disabled = false;
+      } else {
+        status.textContent = 'No se pudo confirmar si se envió la solicitud. Revisa el correo y la conexión antes de intentarlo de nuevo.';
+        button.disabled = false;
+      }
     }
   });
   form.addEventListener('submit', async event => {

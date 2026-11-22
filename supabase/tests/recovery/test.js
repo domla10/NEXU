@@ -4,12 +4,12 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const script = fs.readFileSync(require('node:path').join(__dirname, '../../recovery-test/recovery.js'), 'utf8');
 const makeJwt = method => ['e30', Buffer.from(JSON.stringify({iss:'https://hwckbmhfbsrwqohhmrom.supabase.co/auth/v1',amr:[{method}]})).toString('base64url'),'signature'].join('.');
-async function run({query='?code=valid', hash='', event='PASSWORD_RECOVERY', method='recovery', invalid=false, getUserError=false}={}) {
+async function run({query='?code=valid', hash='', event='PASSWORD_RECOVERY', method='recovery', invalid=false, getUserError=false, resetError=null}={}) {
  let callback; let clientOptions; let exchangeCalls=0; let verified=0; let updates=0;
  const handlers={}; const storage=new Map();
- const form= id => ({hidden:true, addEventListener:(_,fn)=>handlers[id]=fn,querySelector:()=>({disabled:false})});
+ const form= id => { const button={disabled:false}; return {hidden:true,button,addEventListener:(_,fn)=>handlers[id]=fn,querySelector:()=>button}; };
  const elements={start:form('start'),form:form('form'), status:{textContent:''},email:{value:'test@example.com'},password:{value:'a'.repeat(20)},confirmation:{value:'a'.repeat(20)}};
- const auth={onAuthStateChange:fn=>{callback=fn},exchangeCodeForSession:async()=>{exchangeCalls++;if(invalid)return {error:{},data:{}};callback(event,{access_token:makeJwt(method)});return {error:null,data:{session:{access_token:makeJwt(method)}}}},getUser:async()=>{verified++;return getUserError?{error:{}}:{data:{user:{id:'test'}},error:null}},updateUser:async()=>{updates++;return {error:null}},resetPasswordForEmail:async()=>({error:null})};
+ const auth={onAuthStateChange:fn=>{callback=fn},exchangeCodeForSession:async()=>{exchangeCalls++;if(invalid)return {error:{},data:{}};callback(event,{access_token:makeJwt(method)});return {error:null,data:{session:{access_token:makeJwt(method)}}}},getUser:async()=>{verified++;return getUserError?{error:{}}:{data:{user:{id:'test'}},error:null}},updateUser:async()=>{updates++;return {error:null}},resetPasswordForEmail:async()=>({error:resetError})};
  const context={URLSearchParams,atob:v=>Buffer.from(v,'base64').toString('binary'),
    window:{isSecureContext:true,location:{search:query,hash,pathname:'/nexu-test-recovery/'},history:{replaceState:()=>{}},localStorage:{get length(){return storage.size},key:i=>[...storage.keys()][i],getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)}},
    document:{getElementById:id=>elements[id]},supabase:{createClient:(_url,_key,opts)=>{clientOptions=opts;return {auth}}}};
@@ -19,6 +19,10 @@ async function run({query='?code=valid', hash='', event='PASSWORD_RECOVERY', met
 (async()=>{
  let p=await run();assert.equal(p.elements.form.hidden,false,'recovery opens after exchange');assert.equal(p.counts().verified,1,'validates session on server'); p.elements.confirmation.value='mismatch'; await p.handlers.form({preventDefault(){}});assert.equal(p.counts().updates,0); p.elements.confirmation.value='a'.repeat(20);await p.handlers.form({preventDefault(){}});assert.equal(p.counts().updates,1);assert.equal(p.elements.form.hidden,true);
  p=await run({query:''}); p.adapter.setItem('nexu-test-recovery-code-verifier','fixture-verifier');p.adapter.setItem('nexu-test-recovery','fixture-session');assert.equal(p.storage.size,1);assert.equal(p.adapter.getItem('nexu-test-recovery-code-verifier'),'fixture-verifier');assert.equal([...p.storage.values()].join('').includes('fixture-session'),false); p.storage.set('nexu-test-recovery-code-verifier', JSON.stringify({value:'old',expires:0}));assert.equal(p.adapter.getItem('nexu-test-recovery-code-verifier'),null);
+ p=await run({query:'',resetError:{status:429,code:'over_email_send_rate_limit'}});await p.handlers.start({preventDefault(){}});assert.match(p.elements.status.textContent,/límite de envío/i);assert.doesNotMatch(p.elements.status.textContent,/over_email_send_rate_limit/);assert.equal(p.elements.start.button.disabled,true);
+ p=await run({query:'',resetError:{status:429,code:'over_request_rate_limit'}});await p.handlers.start({preventDefault(){}});assert.match(p.elements.status.textContent,/límite de solicitudes/i);assert.equal(p.elements.start.button.disabled,true);
+ p=await run({query:'',resetError:{status:503,code:'secret-internal'}});await p.handlers.start({preventDefault(){}});assert.match(p.elements.status.textContent,/no aceptó/i);assert.doesNotMatch(p.elements.status.textContent,/secret-internal/);assert.equal(p.elements.start.button.disabled,false);
+ p=await run({query:'',resetError:new Error('network')});await p.handlers.start({preventDefault(){}});assert.match(p.elements.status.textContent,/no se pudo confirmar/i);
  p=await run({event:'SIGNED_IN'});assert.equal(p.elements.form.hidden,true,'ordinary sign-in event rejected'); await p.handlers.form({preventDefault(){}}); assert.equal(p.counts().updates,0,'ordinary session cannot trigger update via hidden form');
  p=await run({method:'password'});assert.equal(p.elements.form.hidden,true,'password session rejected');
  p=await run({getUserError:true});assert.equal(p.elements.form.hidden,true,'invalid session rejected');
