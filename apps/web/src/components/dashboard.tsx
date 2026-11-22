@@ -26,7 +26,7 @@ function ParticipantAttendance({ state, actor }: { state: AttendanceState; actor
 
 export function Dashboard({ role }: { role: AcademicRole }) {
   const loading = <p role="status">Cargando datos de demostración…</p>;
-  return <><Header role={role}/><main className="content dashboard">
+  return <><Header role={role} currentPanel/><main className="content dashboard">
     <Suspense fallback={loading}><DashboardContent role={role}/></Suspense>
   </main></>;
 }

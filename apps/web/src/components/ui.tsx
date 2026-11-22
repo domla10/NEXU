@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Course } from '@/types/academic';
 
-export function Header({ role, home = false }: { role?: 'facilitador' | 'participante'; home?: boolean }) {
+export function Header({ role, home = false, currentPanel = false }: { role?: 'facilitador' | 'participante'; home?: boolean; currentPanel?: boolean }) {
   return (
     <header className="header">
       <div className="header-inner">
@@ -11,7 +11,7 @@ export function Header({ role, home = false }: { role?: 'facilitador' | 'partici
         </Link>
         <nav aria-label="Navegación principal">
           <Link href="/" aria-current={home ? 'page' : undefined}>Inicio</Link>
-          {role && <span className="nav-current" aria-current="page">{role === 'facilitador' ? 'Facilitador' : 'Participante'}</span>}
+          {role && <Link className="nav-current" href={role === 'facilitador' ? '/docente' : '/estudiante'} aria-current={currentPanel ? 'page' : undefined}>{role === 'facilitador' ? 'Facilitador' : 'Participante'}</Link>}
         </nav>
       </div>
     </header>
