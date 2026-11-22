@@ -12,6 +12,31 @@ module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
 class SessionSafetyTests(unittest.TestCase):
+    def test_persistent_missing_secrets_stops_before_network(self):
+        with patch.dict('os.environ', {}, clear=True), patch.object(module, 'api') as api:
+            with self.assertRaises(module.CheckFailure):
+                module.persistent_authenticate()
+            api.assert_not_called()
+
+    def test_persistent_auth_requires_confirmed_matching_distinct_accounts(self):
+        env = {'NEXU_TEST_ANON_KEY': 'public', 'NEXU_TEST_ADMIN_PASSWORD': 'a',
+               'NEXU_TEST_FACILITADOR_PASSWORD': 'b', 'NEXU_TEST_PARTICIPANTE_PASSWORD': 'c',
+               'NEXU_TEST_ADMIN_EMAIL': 'admin@example.test', 'NEXU_TEST_FACILITADOR_EMAIL': 'fac@example.test',
+               'NEXU_TEST_PARTICIPANTE_EMAIL': 'part@example.test'}
+        def response(key, path, method='GET', body=None, **kwargs):
+            return 200, {'access_token': 'secret-token', 'user': {
+                'id': body['email'], 'email': body['email'], 'email_confirmed_at': 'yes'}}
+        with patch.dict('os.environ', env, clear=True), patch.object(module, 'api', side_effect=response) as api:
+            users = module.persistent_authenticate()
+            self.assertEqual(len({u['id'] for u in users.values()}), 3)
+            self.assertEqual(api.call_count, 3)
+            self.assertNotIn('password', users['admin'])
+
+    def test_persistent_rejects_mismatched_email(self):
+        with patch.dict('os.environ', {'NEXU_TEST_ADMIN_EMAIL': 'admin@example.test'}), patch.object(module, 'api', return_value=(200, {'access_token': 'x', 'user': {'id': 'x', 'email': 'other@example.test', 'email_confirmed_at': 'yes'}})):
+            with self.assertRaises(module.CheckFailure):
+                module.authenticate_persistent('key', 'admin', 'password')
+
     def test_existing_confirmed_identity_can_be_authenticated_without_storing_secret(self):
         result = {'access_token': 'session-in-memory', 'user': {'id': 'id-1', 'email_confirmed_at': 'confirmed', 'user_metadata': {'nexu_test_run': 'a' * 32, 'nexu_test_identity': 'participante'}}}
         with patch.object(module, 'api', return_value=(200, result)):

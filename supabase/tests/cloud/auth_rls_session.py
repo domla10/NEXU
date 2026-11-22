@@ -7,6 +7,7 @@ No crea ni modifica nada hasta que el operador autorice expresamente cada fase.
 import getpass
 import json
 import math
+import os
 import secrets
 import sys
 import time
@@ -93,6 +94,46 @@ def authenticate_existing(key, email, password, kind, marker):
             and metadata.get('nexu_test_run') == marker and metadata.get('nexu_test_identity') == kind):
         raise CheckFailure('La identidad autenticada no corresponde a la ejecución confirmada.')
     return {'id': user['id'], 'token': session['access_token']}
+
+def authenticate_persistent(key, kind, password):
+    email = os.environ.get(f'NEXU_TEST_{kind.upper()}_EMAIL', '').strip()
+    if not email:
+        raise CheckFailure(f'Falta el correo de la identidad {kind}.')
+    status, session = api(key, '/auth/v1/token?grant_type=password', 'POST',
+                          {'email': email, 'password': password})
+    if status != 200 or not isinstance(session, dict):
+        raise CheckFailure(f'No se pudo iniciar sesión en {kind} (HTTP {status}).')
+    user = session.get('user') or {}
+    if not (session.get('access_token') and user.get('id') and user.get('email_confirmed_at')
+            and str(user.get('email', '')).casefold() == email.casefold()):
+        raise CheckFailure(f'La cuenta {kind} no coincide o no está confirmada.')
+    return {'id': user['id'], 'token': session['access_token']}
+
+
+def persistent_authenticate():
+    names = {'admin': 'NEXU_TEST_ADMIN_PASSWORD',
+             'facilitador': 'NEXU_TEST_FACILITADOR_PASSWORD',
+             'participante': 'NEXU_TEST_PARTICIPANTE_PASSWORD'}
+    key = os.environ.get('NEXU_TEST_ANON_KEY', '')
+    if not key or any(not os.environ.get(name) for name in names.values()) or any(
+            not os.environ.get(f'NEXU_TEST_{kind.upper()}_EMAIL') for kind in names):
+        raise CheckFailure('Faltan variables NEXU_TEST requeridas.')
+    users = {kind: authenticate_persistent(key, kind, os.environ[name])
+             for kind, name in names.items()}
+    if len({user['id'] for user in users.values()}) != len(names):
+        raise CheckFailure('Las identidades deben ser distintas.')
+    return users
+
+
+def persistent_main(run_fixtures=False):
+    users = persistent_authenticate()
+    print('Las tres identidades confirmadas iniciaron sesión en NEXU-TEST.', flush=True)
+    if not run_fixtures:
+        return
+    if not sys.stdin.isatty() or ask('Para crear datos ficticios autorizados escribe EJECUTAR: ') != 'EJECUTAR':
+        raise CheckFailure('Pruebas detenidas antes de crear fixtures.')
+    run_security_tests(os.environ['NEXU_TEST_ANON_KEY'], users, secrets.token_hex(16))
+
 
 def run_security_tests(key, users, marker):
     admin = users['admin']['token']
@@ -257,7 +298,11 @@ def resume_main():
 
 if __name__ == '__main__':
     try:
-        if sys.argv[1:] == ['--reanudar']:
+        if sys.argv[1:] == ['--persistentes']:
+            persistent_main()
+        elif sys.argv[1:] == ['--persistentes-con-fixtures']:
+            persistent_main(run_fixtures=True)
+        elif sys.argv[1:] == ['--reanudar']:
             resume_main()
         elif sys.argv[1:]:
             raise CheckFailure('Opción desconocida.')
