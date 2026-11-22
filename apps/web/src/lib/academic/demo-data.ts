@@ -1,9 +1,11 @@
 import type { Course, Enrollment, FacilitatorAssignment, Section, UserProfile } from '../../types/academic.ts';
 
 export const users: UserProfile[] = [
-  { id: 'demo-multiple', displayName: 'Usuario de demostración', globalRoles: ['administrador'], demoFacilitator: true },
+  { id: 'demo-multiple', displayName: 'Usuario de demostración', globalRoles: ['administrador'], demoFacilitator: true, demoParticipant: true },
+  { id: 'participant-extra-01', displayName: 'Participante ficticio adicional 1', globalRoles: [], demoParticipant: true },
+  { id: 'participant-extra-02', displayName: 'Participante ficticio adicional 2', globalRoles: [], demoParticipant: true },
   { id: 'facilitator-02', displayName: 'Facilitador de demostración 2', globalRoles: [], demoFacilitator: true },
-  ...Array.from({ length: 12 }, (_, i): UserProfile => ({ id: `participant-${String(i + 1).padStart(2, '0')}`, displayName: `Participante ficticio ${i + 1}`, globalRoles: [] })),
+  ...Array.from({ length: 12 }, (_, i): UserProfile => ({ id: `participant-${String(i + 1).padStart(2, '0')}`, displayName: `Participante ficticio ${i + 1}`, globalRoles: [], demoParticipant: true })),
 ];
 export const courses: Course[] = [
   { id: 'course-physics-2', slug: 'fisica-ii', name: 'Física II', code: 'DEMO-FIS2', description: 'Curso ficticio para el piloto.', program: 'Curso piloto provisional', institution: 'UNESR', campus: 'Núcleo Araure', status: 'active', isPilot: true },

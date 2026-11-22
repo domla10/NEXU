@@ -2,7 +2,8 @@ import type { Course, Section, UserProfile, FacilitatorAssignment, Enrollment } 
 
 export type CourseData = { name: string; code: string; description: string; status: 'active' | 'inactive' };
 export type SectionData = { courseId: string; name: string; code: string; facilitatorId: string; status: 'active' | 'inactive' };
-export type DemoState = { courses: Course[]; sections: Section[]; assignments: FacilitatorAssignment[]; enrollments: Enrollment[]; users: UserProfile[] };
+export type DemoState = { courses: Course[]; sections: Section[]; assignments: FacilitatorAssignment[]; enrollments: Enrollment[]; users: UserProfile[]; requests?: EnrollmentRequest[] };
+export type EnrollmentRequest = { id: string; participantId: string; courseId: string; sectionId: string; facilitatorId: string; createdAt: string; status: 'pendiente' | 'aprobada' | 'rechazada' | 'cancelada'; resolvedAt?: string; resolvedBy?: string; origin: 'catalogo' | 'qr' };
 export type Result<T> = { ok: true; value: T } | { ok: false; error: string };
 export interface StateStore { read(): DemoState; write(state: DemoState): void }
 
@@ -50,7 +51,7 @@ export class CourseManagement {
   async listForRole(userId: string, role: 'facilitador' | 'participante'): Promise<{ course: Course; section: Section }[]> {
     const state = this.store.read();
     const links = role === 'facilitador' ? state.assignments : state.enrollments;
-    return state.sections.filter(s => s.status === 'active' && links.some(l => l.sectionId === s.id && l.userId === userId)).flatMap(section => {
+    return state.sections.filter(s => s.status === 'active' && links.some(l => l.sectionId === s.id && l.userId === userId && (!('status' in l) || l.status !== 'retirada'))).flatMap(section => {
       const course = state.courses.find(c => c.id === section.courseId && c.status === 'active');
       return course ? [{ course: { ...course }, section: { ...section } }] : [];
     });

@@ -2,11 +2,11 @@
 export type AcademicRole = 'participante' | 'facilitador';
 export type GlobalRole = 'administrador';
 export type CourseStatus = 'active' | 'inactive';
-export type UserProfile = { id: string; displayName: string; globalRoles: GlobalRole[]; demoFacilitator?: boolean };
+export type UserProfile = { id: string; displayName: string; globalRoles: GlobalRole[]; demoFacilitator?: boolean; demoParticipant?: boolean };
 export type Course = { id: string; slug: string; name: string; code: string; description: string; program: string; institution: string; campus: string; status: CourseStatus; isPilot: boolean };
 export type Section = { id: string; courseId: string; name: string; code: string; status: CourseStatus };
 export type FacilitatorAssignment = { sectionId: string; userId: string };
-export type Enrollment = { sectionId: string; userId: string };
+export type Enrollment = { sectionId: string; userId: string; status?: 'activa' | 'retirada'; updatedAt?: string };
 export type GlobalPermission = 'manage_platform';
 export type CoursePermission = 'view_course' | 'manage_course';
 export type OperationResult<T> = { ok: true; value: T } | { ok: false; error: 'not_found' | 'forbidden' | 'conflict' };
