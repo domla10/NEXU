@@ -5,9 +5,17 @@ window.history.replaceState(null, '', window.location.pathname);
 let token = fragment.get('access_token');
 fragment.delete('access_token');
 fragment.delete('refresh_token');
+let isRecoverySession = false;
+try {
+  const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+  isRecoverySession = payload.iss === 'https://hwckbmhfbsrwqohhmrom.supabase.co/auth/v1' &&
+    Array.isArray(payload.amr) && payload.amr.some(item => item.method === 'recovery');
+} catch {
+  isRecoverySession = false;
+}
 const form = document.getElementById('form');
 const status = document.getElementById('status');
-if (!window.isSecureContext || fragment.get('type') !== 'recovery' || !token) {
+if (!window.isSecureContext || fragment.get('type') !== 'recovery' || !isRecoverySession) {
   status.textContent = 'El enlace no es válido o ha caducado. Solicita uno nuevo desde NEXU-TEST.';
 } else {
   status.textContent = 'Introduce una contraseña nueva.';

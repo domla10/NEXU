@@ -18,6 +18,7 @@ function page(hash, secure = true, responseOk = true) {
   };
   const context = {
     URLSearchParams,
+    atob: value => Buffer.from(value, 'base64').toString('binary'),
     window: { isSecureContext: secure, location: { hash, pathname: '/' },
       history: { replaceState: (_a, _b, url) => { assert.equal(url, '/'); cleared = true; } } },
     document: { getElementById: id => elements[id] },
@@ -29,26 +30,28 @@ function page(hash, secure = true, responseOk = true) {
 }
 
 (async () => {
+  const token = (method) => ['header', Buffer.from(JSON.stringify({iss: 'https://hwckbmhfbsrwqohhmrom.supabase.co/auth/v1', amr: [{method}]})).toString('base64url'), 'signature'].join('.');
+  assert.equal(page('#type=recovery&access_token=' + token('password')).elements.form.hidden, true);
   assert.equal(page('#type=signup&access_token=example').elements.form.hidden, true);
-  assert.equal(page('#type=recovery&access_token=example', false).elements.form.hidden, true);
+  assert.equal(page('#type=recovery&access_token=' + token('recovery'), false).elements.form.hidden, true);
   assert.equal(page('#type=recovery').elements.form.hidden, true);
-  const mismatch = page('#type=recovery&access_token=example');
+  const mismatch = page('#type=recovery&access_token=' + token('recovery'));
   mismatch.elements.confirmation.value = 'different';
   await mismatch.submit();
   assert.equal(mismatch.requests.length, 0);
-  const success = page('#type=recovery&access_token=example&refresh_token=never-send');
+  const success = page('#type=recovery&access_token=' + token('recovery') + '&refresh_token=never-send');
   await success.submit();
   assert.equal(success.requests.length, 1);
   const request = success.requests[0];
   assert.equal(request.url, 'https://hwckbmhfbsrwqohhmrom.supabase.co/auth/v1/user');
-  assert.equal(request.options.headers.Authorization, 'Bearer example');
+  assert.equal(request.options.headers.Authorization, 'Bearer ' + token('recovery'));
   assert.equal(request.options.referrerPolicy, 'no-referrer');
   assert.equal(request.options.credentials, 'omit');
   assert.equal(request.options.redirect, 'error');
   assert.equal(JSON.stringify(request).includes('never-send'), false);
   assert.equal(success.elements.form.hidden, true);
   assert.equal(success.elements.password.value, '');
-  const failed = page('#type=recovery&access_token=example', true, false);
+  const failed = page('#type=recovery&access_token=' + token('recovery'), true, false);
   await failed.submit();
   assert.equal(failed.elements.form.hidden, false);
   assert.match(failed.elements.status.textContent, /No se pudo/);
