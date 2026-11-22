@@ -10,7 +10,7 @@ Digitalizar y agilizar el registro de asistencia en clases y, en una fase poster
 
 ## Prioridad actual: piloto de asistencia
 
-El curso propuesto provisionalmente para el piloto es **Química Orgánica**, del programa de Ingeniería de Alimentos de la **UNESR, Núcleo Araure**. Todavía no existe autorización institucional para realizar pruebas con datos reales. La propuesta requiere un facilitador colaborador y aprobación institucional. Su alcance previsto comprende:
+El curso propuesto provisionalmente para el piloto es **Física II**, de la **UNESR, Núcleo Araure**. Todavía no existe autorización institucional para realizar pruebas con datos reales. La propuesta requiere un facilitador colaborador y aprobación institucional. Su alcance previsto comprende:
 
 - **QR dinámico**: el profesor abre una sesión y muestra códigos de vigencia corta con renovación continua (30 segundos es una propuesta inicial, no una decisión final). La validación debe ocurrir de manera segura desde un servicio o mecanismo confiable. El código QR no contiene datos personales.
 - **Registro manual de respaldo**: el profesor puede registrar asistencias en caso de fallos de conexión, batería o disponibilidad del dispositivo del estudiante. Se conserva trazabilidad del registro.
@@ -91,7 +91,7 @@ Consulta `docs/` para decisiones, alcance del piloto, riesgos y criterios de seg
 
 ## Ejecutar el prototipo web
 
-La versión 0.1.1 ofrece pantallas de demostración con datos ficticios. El curso provisional se configura en `apps/web/src/lib/demo-courses.ts`. No incluye autenticación, registro de asistencia ni QR funcional. No existe autorización institucional para pruebas con datos reales.
+La versión 0.1.1 ofrece pantallas de demostración con datos ficticios. El curso provisional se configura en `apps/web/src/lib/academic/demo-data.ts`. No incluye autenticación, registro de asistencia ni QR funcional. No existe autorización institucional para pruebas con datos reales.
 
 Requisitos: Node.js 20.9 o posterior y npm. Desde la raíz del repositorio:
 
@@ -105,6 +105,12 @@ Abre `http://localhost:3000`. Para comprobar la aplicación ejecuta `npm run typ
 
 ## Frontend de autenticación y paneles
 
-Las rutas `/login`, `/register` y `/forgot-password` muestran formularios de demostración que validan la interfaz: no crean cuentas, no inician sesión y no envían correos. No se deben introducir credenciales reales. Las rutas existentes `/docente` y `/estudiante` muestran paneles públicos con datos ficticios; cambiar de vista no concede permisos. Los roles reales deberán validarse en el servidor cuando exista un backend. El curso de muestra permanece en `apps/web/src/lib/demo-courses.ts`.
+Las rutas `/login`, `/register` y `/forgot-password` muestran formularios de demostración que validan la interfaz: no crean cuentas, no inician sesión y no envían correos. No se deben introducir credenciales reales. Las rutas existentes `/docente` y `/estudiante` muestran paneles públicos con datos ficticios; cambiar de vista no concede permisos. Los roles reales deberán validarse en el servidor cuando exista un backend. El curso de muestra permanece en `apps/web/src/lib/academic/demo-data.ts`.
 
 Los tipos de evaluaciones y escalas configurables están en `apps/web/src/types/academic.ts`. La escala de 1 a 5 es un ejemplo provisional y no convierte ni calcula notas. Las calificaciones futuras serán informativas y no sustituyen los registros oficiales. El piloto sigue sujeto a autorización institucional antes de usar datos reales.
+
+## Base funcional de demostración
+
+Los paneles usan el repositorio ficticio en `apps/web/src/lib/academic/` y muestran los cursos correspondientes al contexto del usuario de demostración. Física II contiene 13 inscripciones ficticias. El usuario de ejemplo tiene rol global de administrador y relaciones académicas independientes por curso. Los permisos de demostración no protegen datos reales ni reemplazan las futuras políticas RLS de Supabase.
+
+Ejecuta `npm test` desde `apps/web` con Node.js 22.18 o posterior para las pruebas de dominio.

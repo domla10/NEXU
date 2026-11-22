@@ -1,7 +1,15 @@
-/** Los roles y las escalas reales deberán proceder de una fuente autorizada. */
+/** Contratos de dominio. Los permisos reales deberán verificarse en el servidor. */
 export type AcademicRole = 'participante' | 'facilitador';
-export type UserProfile = { displayName: string; roles: AcademicRole[] };
+export type GlobalRole = 'administrador';
+export type CourseStatus = 'active' | 'inactive';
+export type UserProfile = { id: string; displayName: string; globalRoles: GlobalRole[]; demoFacilitator?: boolean; demoParticipant?: boolean };
+export type Course = { id: string; slug: string; name: string; code: string; description: string; program: string; institution: string; campus: string; status: CourseStatus; isPilot: boolean };
+export type Section = { id: string; courseId: string; name: string; code: string; status: CourseStatus };
+export type FacilitatorAssignment = { sectionId: string; userId: string };
+export type Enrollment = { sectionId: string; userId: string; status?: 'activa' | 'retirada'; updatedAt?: string };
+export type GlobalPermission = 'manage_platform';
+export type CoursePermission = 'view_course' | 'manage_course';
+export type OperationResult<T> = { ok: true; value: T } | { ok: false; error: 'not_found' | 'forbidden' | 'conflict' };
 export type GradeScale = { min: number; max: number; label: string };
 export type Evaluation = { title: string; grade: number | null; scale: GradeScale };
-/** Ejemplo configurable, no establece una regla institucional definitiva. */
 export const unesrExampleScale: GradeScale = { min: 1, max: 5, label: 'Ejemplo de escala de 1 a 5' };

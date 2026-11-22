@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import type { DemoCourse } from '@/lib/demo-courses';
+import type { Course } from '@/types/academic';
 
-export function Header({ role, home = false }: { role?: 'facilitador' | 'participante'; home?: boolean }) {
+export function Header({ role, home = false, currentPanel = false }: { role?: 'facilitador' | 'participante'; home?: boolean; currentPanel?: boolean }) {
   return (
     <header className="header">
       <div className="header-inner">
@@ -11,17 +11,20 @@ export function Header({ role, home = false }: { role?: 'facilitador' | 'partici
         </Link>
         <nav aria-label="Navegación principal">
           <Link href="/" aria-current={home ? 'page' : undefined}>Inicio</Link>
-          {role && <span className="nav-current" aria-current="page">{role === 'facilitador' ? 'Facilitador' : 'Participante'}</span>}
+          {role && <Link className="nav-current" href={role === 'facilitador' ? '/docente' : '/estudiante'} aria-current={currentPanel ? 'page' : undefined}>{role === 'facilitador' ? 'Facilitador' : 'Participante'}</Link>}
         </nav>
       </div>
     </header>
   );
 }
 
-export function CourseCard({ course, navigable = false }: { course: DemoCourse; navigable?: boolean }) {
-  const details = <><span className="course-label">CURSO PILOTO PROVISIONAL</span><h2>{course.name}</h2><p className="program">{course.program}</p><p className="institution">{course.institution} · {course.campus}</p></>;
-  if (!navigable) return <article className="course">{details}</article>;
-  return <Link className="course course-link" href={`/docente/cursos/${course.slug}`}><span className="course-link-icon" aria-hidden="true"><AcademicIcon /></span><div className="course-link-details">{details}</div><span className="course-link-arrow" aria-hidden="true">→</span></Link>;
+export function CourseCard({ course, navigable = false, userId }: { course: Course; navigable?: boolean; userId?: string }) {
+  const details = <><span className="course-label">{course.isPilot ? 'CURSO PILOTO PROVISIONAL' : 'CURSO DE DEMOSTRACIÓN'}</span><h2>{course.name}</h2><p className="program">{course.program}</p><p className="institution">{course.institution} · {course.campus}</p></>;
+  if (!navigable) return <article className="course enrolled-course">
+    <h3>{course.name}</h3>
+    <p>{course.code} · {course.program}</p>
+  </article>;
+  return <Link className="course course-link" href={`/docente/cursos/${course.slug}${userId ? `?usuario=${encodeURIComponent(userId)}` : ''}`}><span className="course-link-icon" aria-hidden="true"><AcademicIcon /></span><div className="course-link-details">{details}</div><span className="course-link-arrow" aria-hidden="true">→</span></Link>;
 }
 
 export function AcademicIcon() {
