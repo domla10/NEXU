@@ -1,6 +1,6 @@
 import type { Course, Section, UserProfile, FacilitatorAssignment, Enrollment } from '../../types/academic.ts';
 
-export type CourseData = { name: string; code: string; description: string; status: 'active' | 'inactive' };
+export type CourseData = { name: string; code: string; description: string; status: 'active' | 'inactive'; facilitatorId?: string };
 export type SectionData = { courseId: string; name: string; code: string; facilitatorId: string; status: 'active' | 'inactive' };
 export type DemoState = { courses: Course[]; sections: Section[]; assignments: FacilitatorAssignment[]; enrollments: Enrollment[]; users: UserProfile[]; requests?: EnrollmentRequest[] };
 export type EnrollmentRequest = { id: string; participantId: string; courseId: string; sectionId: string; facilitatorId: string; createdAt: string; status: 'pendiente' | 'aprobada' | 'rechazada' | 'cancelada'; resolvedAt?: string; resolvedBy?: string; origin: 'catalogo' | 'qr' };
@@ -26,6 +26,19 @@ export class CourseManagement {
     const existing = id ? state.courses.find(c => c.id === id) : undefined;
     if (id && !existing) return { ok: false, error: 'Curso no encontrado.' };
     const course: Course = existing ? { ...existing, name, code, description, status: data.status } : { id: crypto.randomUUID(), slug: crypto.randomUUID(), name, code, description, status: data.status, isPilot: false, program: 'Curso de demostración', institution: 'UNESR', campus: 'Núcleo Araure' };
+    if (existing && data.facilitatorId) {
+      const groups = state.sections.filter(s => s.courseId === existing.id);
+      if (groups.length !== 1) return { ok: false, error: 'Este curso tiene grupos históricos que requieren revisión.' };
+      if (!state.users.some(u => u.id === data.facilitatorId && u.demoFacilitator)) return { ok: false, error: 'Selecciona un facilitador válido.' };
+      state.assignments = [...state.assignments.filter(a => a.sectionId !== groups[0].id), { sectionId: groups[0].id, userId: data.facilitatorId }];
+    }
+    if (!existing) {
+      const facilitatorId = data.facilitatorId ?? actor;
+      if (!state.users.some(u => u.id === facilitatorId && u.demoFacilitator)) return { ok: false, error: 'Selecciona un facilitador válido.' };
+      const groupId = crypto.randomUUID();
+      state.sections.push({ id: groupId, courseId: course.id, name: 'Grupo del curso', code: 'UNICO', status: 'active' });
+      state.assignments.push({ sectionId: groupId, userId: facilitatorId });
+    }
     state.courses = existing ? state.courses.map(c => c.id === id ? course : c) : [...state.courses, course];
     this.store.write(state);
     return { ok: true, value: course };
@@ -37,6 +50,7 @@ export class CourseManagement {
     if (!name || !code) return { ok: false, error: 'Completa el nombre y el identificador de la sección.' };
     if (!['active', 'inactive'].includes(data.status)) return { ok: false, error: 'Estado de sección inválido.' };
     if (!state.courses.some(c => c.id === data.courseId)) return { ok: false, error: 'El curso no existe.' };
+    if (!id && state.sections.some(s => s.courseId === data.courseId)) return { ok: false, error: 'El curso ya tiene un grupo académico.' };
     if (!state.users.some(u => u.id === data.facilitatorId && u.demoFacilitator)) return { ok: false, error: 'Selecciona un facilitador de demostración válido.' };
     if (state.sections.some(s => s.id !== id && s.courseId === data.courseId && s.code.toUpperCase() === code)) return { ok: false, error: 'Ese identificador ya existe en el curso.' };
     const old = id ? state.sections.find(s => s.id === id) : undefined;

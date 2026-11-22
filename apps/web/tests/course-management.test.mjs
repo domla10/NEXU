@@ -16,19 +16,18 @@ test('crear y editar cursos, rechazar duplicados y preservar inscripciones', asy
   const before = structuredClone(get().enrollments);
   const created = await service.saveCourse(admin, valid);
   assert.equal(created.ok, true);
+  assert.equal(get().sections.filter(s => s.courseId === created.value.id).length, 1);
   assert.equal((await service.saveCourse(admin, { ...valid, code: 'demo-nuevo' })).ok, false);
   assert.equal((await service.saveCourse(admin, { ...valid, name: 'Editado', status: 'inactive' }, created.value.id)).ok, true);
   assert.equal((await service.saveCourse(admin, { ...valid, name: '' })).ok, false);
   assert.deepEqual(get().enrollments, before);
 });
-test('secciones admiten asignación y cambio sin duplicar identificadores', async () => {
+test('cada curso tiene un grupo y permite cambiar su facilitador', async () => {
   const { service, get } = setup();
-  const created = await service.saveSection(admin, section);
-  assert.equal(created.ok, true);
-  assert.equal((await service.saveSection(admin, { ...section, code: 'b' })).ok, false);
-  assert.equal((await service.saveSection(admin, { ...section, facilitatorId: 'participant-01' })).ok, false);
-  assert.equal((await service.saveSection(admin, { ...section, facilitatorId: admin }, created.value.id)).ok, true);
-  assert.equal(get().assignments.find(a => a.sectionId === created.value.id).userId, admin);
+  assert.equal((await service.saveSection(admin, section)).ok, false);
+  assert.equal((await service.saveSection(admin, { ...section, facilitatorId: 'participant-01' }, 'section-physics-demo')).ok, false);
+  assert.equal((await service.saveSection(admin, { ...section, facilitatorId: 'facilitator-02' }, 'section-physics-demo')).ok, true);
+  assert.equal(get().assignments.find(a => a.sectionId === 'section-physics-demo').userId, 'facilitator-02');
   assert.equal(get().enrollments.filter(e => e.sectionId === 'section-physics-demo').length, 13);
 });
 test('permisos, contextos y protección de operaciones de escritura', async () => {
