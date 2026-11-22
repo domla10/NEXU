@@ -18,6 +18,7 @@ export default function Home() {
           <p className="intro">Vistas públicas con información ficticia. No requieren inicio de sesión.</p>
           <div className="demo-links">
             <Link href="/estudiante">Participante <span aria-hidden="true">→</span></Link>
+            <Link href="/admin">Administración <span aria-hidden="true">→</span></Link>
             <Link href="/docente">Facilitador <span aria-hidden="true">→</span></Link>
           </div>
         </div>
